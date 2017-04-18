@@ -1626,8 +1626,17 @@ echo "aborting script..."
 exit
 fi
 
+if [ -d /usr/local/vesta ]; then
+echo "VestaCP detected.. centmin mod NOT compatible"
+echo "aborting script..."
+exit
+fi
+
 if [[ "$CENTOS_SEVEN" = '7' && "$DNF_ENABLE" = [yY] ]]; then
-  # yum -y -q install epel-release
+  if [[ $(rpm -q epel-release >/dev/null 2>&1; echo $?) != '0' ]]; then
+    yum -y -q install epel-release
+    yum clean all
+  fi
   if [[ "$DNF_COPR" = [yY] ]]; then
 cat > "/etc/yum.repos.d/dnf-centos.repo" <<EOF
 [dnf-centos]
@@ -1642,6 +1651,7 @@ EOF
   fi
   if [[ ! -f /usr/bin/dnf ]]; then
     yum -y -q install dnf
+    dnf clean all
   fi
   if [ ! "$(grep -w 'exclude' /etc/dnf/dnf.conf)" ]; then
     echo "excludepkgs=*.i386 *.i586 *.i686" >> /etc/dnf/dnf.conf
@@ -1659,6 +1669,11 @@ EOF
   fi
 else
   YUMDNFBIN='yum'
+  if [ -f /etc/yum.repos.d/rpmforge.repo ]; then
+    DISABLEREPO_DNF=' --disablerepo=rpmforge'
+  else
+    DISABLEREPO_DNF=""
+  fi
 fi
 
 yumfastmirror_check

@@ -109,24 +109,6 @@ if [ ! -f /usr/bin/tee ]; then
 yum -y -q install coreutils
 fi
 
-if [ -f /var/cpanel/cpanel.config ]; then
-echo "WHM/Cpanel detected.. centmin mod NOT compatible"
-echo "aborting script..."
-exit
-fi
-
-if [ -f /etc/psa/.psa.shadow ]; then
-echo "Plesk detected.. centmin mod NOT compatible"
-echo "aborting script..."
-exit
-fi
-
-if [ -f /etc/init.d/directadmin ]; then
-echo "DirectAdmin detected.. centmin mod NOT compatible"
-echo "aborting script..."
-exit
-fi
-
 TESTEDCENTOSVER='7.9'
 CENTOSVER=$(awk '{ print $3 }' /etc/redhat-release)
 
@@ -815,8 +797,6 @@ mysqltmpdir
 
 # echo $1
 if [[ "$1" = 'install' ]]; then
-  INITIALINSTALL='y'
-  export INITIALINSTALL='y'
   cpcheck initialinstall
 else
   cpcheck
@@ -916,50 +896,6 @@ EOF
   fi
 fi
 
-if [[ "$CENTOS_SEVEN" = '7' && "$DNF_ENABLE" = [yY] ]]; then
-  if [[ $(rpm -q epel-release >/dev/null 2>&1; echo $?) != '0' ]]; then
-    yum -y -q install epel-release
-    yum clean all
-  fi
-  if [[ "$DNF_COPR" = [yY] ]]; then
-cat > "/etc/yum.repos.d/dnf-centos.repo" <<EOF
-[dnf-centos]
-name=Copr repo for dnf-centos owned by @rpm-software-management
-baseurl=https://copr-be.cloud.fedoraproject.org/results/@rpm-software-management/dnf-centos/epel-7-\$basearch/
-skip_if_unavailable=True
-gpgcheck=1
-gpgkey=https://copr-be.cloud.fedoraproject.org/results/@rpm-software-management/dnf-centos/pubkey.gpg
-enabled=1
-enabled_metadata=1
-EOF
-  fi
-  if [[ ! -f /usr/bin/dnf ]]; then
-    yum -y -q install dnf
-    dnf clean all
-  fi
-  if [ ! "$(grep -w 'exclude' /etc/dnf/dnf.conf)" ]; then
-    echo "excludepkgs=*.i386 *.i586 *.i686" >> /etc/dnf/dnf.conf
-  fi
-  if [ ! "$(grep -w 'fastestmirror=true' /etc/dnf/dnf.conf)" ]; then
-    echo "fastestmirror=true" >> /etc/dnf/dnf.conf
-  fi
-  if [ -f /etc/yum.repos.d/rpmforge.repo ]; then
-      sed -i 's|enabled .*|enabled = 0|g' /etc/yum.repos.d/rpmforge.repo
-      DISABLEREPO_DNF=' --disablerepo=rpmforge'
-      YUMDNFBIN="dnf${DISABLEREPO_DNF}"
-  else
-      DISABLEREPO_DNF=""
-      YUMDNFBIN='dnf'
-  fi
-else
-  YUMDNFBIN='yum'
-  if [ -f /etc/yum.repos.d/rpmforge.repo ]; then
-    DISABLEREPO_DNF=' --disablerepo=rpmforge'
-  else
-    DISABLEREPO_DNF=""
-  fi
-fi
-
 if [ ! -f /usr/bin/sar ]; then
   time $YUMDNFBIN -y -q install sysstat${DISABLEREPO_DNF}
   if [[ "$(uname -m)" = 'x86_64' ]]; then
@@ -1000,10 +936,6 @@ checkfor_lowmem
 # FUNCTIONS
 
 WGETRETRY=''
-
-sar_call() {
-  $SARCALL 1 1
-}
 
 download_cmd() {
    if [[ "$CENTOS_SEVEN" == 7 || "$CENTOS_SIX" == 6 ]]; then
@@ -1595,7 +1527,8 @@ fi
     cd "${DIR_TMP}/php-${PHP_VERSION}"
 
     ./buildconf --force
-    mkdir fpm-build && cd fpm-build
+   mkdir fpm-build
+   cd fpm-build
 
   if [[ ! -f "/usr/${LIBDIR}/libmysqlclient.so" ]] && [[ -f "/usr/${LIBDIR}/libmysqlclient.so.20" ]]; then
     mkdir -p "/usr/${LIBDIR}/mysql"
