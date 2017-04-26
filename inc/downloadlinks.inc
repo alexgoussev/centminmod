@@ -30,23 +30,28 @@ CURL_CACERTURL='https://curl.haxx.se/ca/cacert.pem'
 CCACHEFILE="ccache-${CCACHE_VER}.tar.gz"
 #CCCACHELINK="https://www.samba.org/ftp/ccache/${CCACHEFILE}"
 CCCACHELINK="${LOCALCENTMINMOD_MIRROR}/centminmodparts/ccache/${CCACHEFILE}"
-CCCACHELINKLOCAL="${LOCALCENTMINMOD_MIRROR}/centminmodparts/ccache/${CCACHEFILE}"
+
+#====================================================================================
 
 # dynamic mirror check for EPEL below overrides these values now
+# mirrors https://admin.fedoraproject.org/mirrormanager/mirrors/EPEL
 CENTOSFIVEEPELFILE="epel-release-5-4.noarch.rpm"
 CENTOSFIVEEPEL="http://mirror.sfo12.us.leaseweb.net/epel/5/${RPMFARCH}/${CENTOSFIVEEPELFILE}"
 
+# mirrors http://mirror-status.repoforge.org
 CENTOSFIVERPMFORGEFILE="rpmforge-release-0.5.3-1.el5.rf.${ARCH}.rpm"
-CENTOSFIVERPMFORGE="http://pkgs.repoforge.org/rpmforge-release/${CENTOSFIVERPMFORGEFILE}"
+CENTOSFIVERPMFORGE="http://mirror.rit.edu/dag/redhat/el5/en/${RPMFARCH}/rpmforge/RPMS/${CENTOSFIVERPMFORGEFILE}"
 
 CENTOSFIVECENTALTFILE="centalt-release-5-3.noarch.rpm"
-CENTOSFIVECENTALT="http://centos.alt.ru/repository/centos/5/${RPMFARCH}/${CENTOSFIVECENTALTFILE}"
+CENTOSFIVECENTALT="http://mirror.neu.edu.cn/CentALT/5/${RPMFARCH}/${CENTOSFIVECENTALTFILE}"
 
-CENTOSFIVEPERCONARELEASEFILE="percona-release-0.1-3.noarch.rpm"
-CENTOSFIVEPERCONARELEASE="http://www.percona.com/redir/downloads/percona-release/redhat/latest/${CENTOSFIVEPERCONARELEASEFILE}"
+CENTOSFIVEPERCONARELEASEFILE="percona-release-0.1-4.noarch.rpm"
+CENTOSFIVEPERCONARELEASE="https://www.percona.com/redir/downloads/percona-release/redhat/${CENTOSFIVEPERCONARELEASEFILE}"
 
 CENTOSFIVEVARNISHFILE='varnish-release-3.0-1.el5.centos.noarch.rpm'
 CENTOSFIVEVARNISH="http://repo.varnish-cache.org/redhat/varnish-3.0/el5/noarch/varnish-release/${CENTOSFIVEVARNISHFILE}"
+
+#====================================================================================
 
 # dynamic mirror check for EPEL below overrides these values now
 CENTOSSIXEPELFILE="epel-release-6-8.noarch.rpm"
@@ -54,18 +59,18 @@ CENTOSSIXEPEL="http://mirror.sfo12.us.leaseweb.net/epel/6/${RPMFARCH}/${CENTOSSI
 CENTOSSIXEPELLOCAL="${LOCALCENTMINMOD_MIRROR}/centminmodparts/repos/${CENTOSSIXEPELFILE}"
 
 CENTOSSIXRPMFORGEFILE="rpmforge-release-0.5.3-1.el6.rf.${ARCH}.rpm"
-CENTOSSIXRPMFORGE="http://pkgs.repoforge.org/rpmforge-release/${CENTOSSIXRPMFORGEFILE}"
+CENTOSSIXRPMFORGE="http://mirror.rit.edu/dag/redhat/el6/en/${RPMFARCH}/rpmforge/RPMS/${CENTOSSIXRPMFORGEFILE}"
 
 CENTOSSIXCENTALTFILE="centalt-release-6-1.noarch.rpm"
-CENTOSSIXCENTALT="http://centos.alt.ru/repository/centos/6/${RPMFARCH}/${CENTOSSIXCENTALTFILE}"
+CENTOSSIXCENTALT="http://mirror.neu.edu.cn/CentALT/6/${RPMFARCH}/${CENTOSSIXCENTALTFILE}"
 CENTOSSIXCENTALTLOCAL="${LOCALCENTMINMOD_MIRROR}/centminmodparts/repos/${CENTOSSIXCENTALTFILE}"
 
-CENTOSSIXPERCONALRELEASEFILE="percona-release-0.1-3.noarch.rpm"
-CENTOSSIXPERCONALRELEASE="http://www.percona.com/redir/downloads/percona-release/redhat/latest/${CENTOSSIXPERCONALRELEASEFILE}"
+CENTOSSIXPERCONALRELEASEFILE="percona-release-0.1-4.noarch.rpm"
+CENTOSSIXPERCONALRELEASE="https://www.percona.com/redir/downloads/percona-release/redhat/${CENTOSSIXPERCONALRELEASEFILE}"
 
 CENTOSSIXVARNISHFILE="varnish-4.1.el6.rpm"
 CENTOSSIXVARNISH="https://repo.varnish-cache.org/redhat/${CENTOSSIXVARNISHFILE}"
-CENTOSSIXVARNISHLOCAL='https://centminmod.com/centminmodparts/repos/${CENTOSSIXVARNISHFILE}'
+CENTOSSIXVARNISHLOCAL="${LOCALCENTMINMOD_MIRROR}/centminmodparts/repos/${CENTOSSIXVARNISHFILE}"
 
 CENTOSSIXAXIVOFILE="axivo-release-6-1.noarch.rpm"
 CENTOSSIXAXIVO="http://rpm.axivo.com/${CENTOSSIXAXIVOFILE}"
@@ -79,15 +84,17 @@ CENTOSSIXATRPMSFILE="atrpms-repo-6-7.el6.x86_64.rpm"
 CENTOSSIXATRPMS="http://dl.atrpms.net/all/${CENTOSSIXATRPMSFILE}"
 CENTOSSIXATRPMSLOCAL="${LOCALCENTMINMOD_MIRROR}/centminmodparts/repos/${CENTOSSIXATRPMSFILE}"
 
+#====================================================================================
+
 # dynamic mirror check for EPEL below overrides these values now
-CENTOSSEVENEPELFILE="epel-release-7-2.noarch.rpm"
+CENTOSSEVENEPELFILE="epel-release-7-9.noarch.rpm"
 CENTOSSEVENEPEL="http://mirror.sfo12.us.leaseweb.net/epel/7/${RPMFARCH}/e/${CENTOSSEVENEPELFILE}"
-CENTOSSEVENEPEL_B="http://dl.fedoraproject.org/pub/epel/7/${RPMFARCH}/e/${CENTOSSEVENEPELFILE}"
 CENTOSSEVENEPELLOCAL="${LOCALCENTMINMOD_MIRROR}/centminmodparts/repos/${CENTOSSEVENEPELFILE}"
 
 # only do dynamic mirror check if /etc/yum.repos.d/epel.repo and thus EPEL yum repo
 # has not been setup and installed yet
-if [ ! -f /etc/yum.repos.d/epel.repo ]; then
+#if [ ! -f /etc/yum.repos.d/epel.repo ]; then
+if [ '' ]; then
 # dynamic mirror check for EPEL
 if [[ "$(uname -m)" = 'x86_64' ]]; then
 	if [[ "$CENTOS_SEVEN" = '7' ]]; then
@@ -133,18 +140,18 @@ fi
 fi # /etc/yum.repos.d/epel.repo file check
 
 CENTOSSEVENRPMFORGEFILE="rpmforge-release-0.5.3-1.el7.rf.${ARCH}.rpm"
-CENTOSSEVENRPMFORGE="http://pkgs.repoforge.org/rpmforge-release/${CENTOSSEVENRPMFORGEFILE}"
+CENTOSSEVENRPMFORGE="http://mirror.rit.edu/dag/redhat/el7/en/${RPMFARCH}/rpmforge/RPMS/${CENTOSSEVENRPMFORGEFILE}"
 
 CENTOSSEVENCENTALTFILE="centalt-release-6-1.noarch.rpm"
-CENTOSSEVENCENTALT="http://centos.alt.ru/repository/centos/6/${RPMFARCH}/${CENTOSSEVENCENTALTFILE}"
+CENTOSSEVENCENTALT="http://mirror.neu.edu.cn/CentALT/6/${RPMFARCH}/${CENTOSSEVENCENTALTFILE}"
 CENTOSSEVENCENTALTLOCAL="${LOCALCENTMINMOD_MIRROR}/centminmodparts/repos/${CENTOSSEVENCENTALTFILE}"
 
-CENTOSSEVENPERCONALRELEASEFILE="percona-release-0.1-3.noarch.rpm"
-CENTOSSEVENPERCONALRELEASE="http://www.percona.com/redir/downloads/percona-release/redhat/latest/${CENTOSSEVENPERCONALRELEASEFILE}"
+CENTOSSEVENPERCONALRELEASEFILE="percona-release-0.1-4.noarch.rpm"
+CENTOSSEVENPERCONALRELEASE="https://www.percona.com/redir/downloads/percona-release/redhat/${CENTOSSEVENPERCONALRELEASEFILE}"
 
 CENTOSSEVENVARNISHFILE="varnish-4.1.el7.rpm"
 CENTOSSEVENVARNISH="https://repo.varnish-cache.org/redhat/${CENTOSSEVENVARNISHFILE}"
-CENTOSSEVENVARNISHLOCAL='https://centminmod.com/centminmodparts/repos/${CENTOSSEVENVARNISHFILE}'
+CENTOSSEVENVARNISHLOCAL="${LOCALCENTMINMOD_MIRROR}/centminmodparts/repos/${CENTOSSEVENVARNISHFILE}"
 
 CENTOSSEVENAXIVOFILE="axivo-release-7-1.noarch.rpm"
 CENTOSSEVENAXIVO="http://rpm.axivo.com/${CENTOSSEVENAXIVOFILE}"
@@ -157,6 +164,8 @@ CENTOSSEVENREMILOCAL="${LOCALCENTMINMOD_MIRROR}/centminmodparts/repos/${CENTOSSE
 CENTOSSEVENATRPMSFILE="atrpms-repo-6-7.el6.x86_64.rpm"
 CENTOSSEVENATRPMS="http://dl.atrpms.net/all/${CENTOSSEVENATRPMSFILE}"
 CENTOSSEVENATRPMSLOCAL="${LOCALCENTMINMOD_MIRROR}/centminmodparts/repos/${CENTOSSEVENATRPMSFILE}"
+
+#====================================================================================
 
 PCRELINKFILE="pcre-${NGINX_PCREVER}.tar.gz"
 #PCRELINK="https://ftp.pcre.org/pub/pcre/${PCRELINKFILE}"
@@ -177,20 +186,19 @@ NGX_WEBDAVLINK="https://github.com/arut/nginx-dav-ext-module/archive/v${NGINX_EX
 NGX_WEBDAVLINKGITLAB="https://gitlab.com/centminmod-github-mirror/nginx-dav-ext-module/repository/archive.tar.gz?ref=v${NGINX_EXTWEBDAVVER}"
 
 # wget renamed
-NGX_PAGESPEEDGITLINKFILE="release-${NGXPGSPEED_VER}.tar.gz"
+NGX_PAGESPEEDGITLINKFILE="ngx_pagespeed-master.tar.gz"
 NGX_PAGESPEEDGITLINK="https://github.com/pagespeed/ngx_pagespeed/archive/master.tar.gz"
 NGX_PAGESPEEDGITLINKGITLAB="https://gitlab.com/centminmod-github-mirror/ngx_pagespeed/repository/archive.tar.gz?ref=master"
 
-NGX_PAGESPEEDLINKFILE="release-${NGXPGSPEED_VER}.tar.gz"
-NGX_PAGESPEEDLINKREALFILE="v${NGXPGSPEED_VER}.tar.gz"
-NGX_PAGESPEEDLINK="https://github.com/pagespeed/ngx_pagespeed/archive/${NGX_PAGESPEEDLINKREALFILE}"
+NGX_PAGESPEEDLINKFILE="ngx_pagespeed-${NGXPGSPEED_VER}.tar.gz"
+NGX_PAGESPEEDLINK="https://github.com/pagespeed/ngx_pagespeed/archive/v${NGXPGSPEED_VER}.tar.gz"
 NGX_PAGESPEEDLINKGITLAB="https://gitlab.com/centminmod-github-mirror/ngx_pagespeed/repository/archive.tar.gz?ref=v${NGXPGSPEED_VER}"
 
-NGX_PAGESPEEDPSOLINKLFILE="${NGINX_PAGESPEEDPSOL_VER}.tar.gz"
-NGX_PAGESPEEDPSOLINKL="https://dl.google.com/dl/page-speed/psol/${NGX_PAGESPEEDPSOLINKLFILE}"
+NGX_PAGESPEEDPSOLINKLFILE="ngx_pagespeed-psol-${NGINX_PAGESPEEDPSOL_VER}.tar.gz"
+NGX_PAGESPEEDPSOLINKL="https://dl.google.com/dl/page-speed/psol/${NGINX_PAGESPEEDPSOL_VER}.tar.gz"
 
 NGX_FANCYINDEXLINKFILE="ngx-fancyindex-${NGINX_FANCYINDEXVER}.tar.gz"
-NGX_FANCYINDEXLINK="${LOCALCENTMINMOD_MIRROR}/centminmodparts/nginx/modules/${NGX_FANCYINDEXLINKFILE}"
+NGX_FANCYINDEXLINK="https://github.com/aperezdc/ngx-fancyindex/archive/v${NGINX_FANCYINDEXVER}.tar.gz"
 
 NGX_CACHEPURGEFILE="ngx_cache_purge-${NGINX_CACHEPURGEVER}.tar.gz"
 NGX_CACHEPURGE="${LOCALCENTMINMOD_MIRROR}/centminmodparts/nginx/modules/${NGX_CACHEPURGEFILE}"
@@ -375,12 +383,15 @@ MEMCACHEDSERVER_LINKFILE="memcached-${MEMCACHED_VERSION}.tar.gz"
 MEMCACHEDSERVER_LINK="http://www.memcached.org/files/${MEMCACHEDSERVER_LINKFILE}"
 MEMCACHEDSERVER_LINKLOCAL="${LOCALCENTMINMOD_MIRROR}/centminmodparts/memcached/${MEMCACHEDSERVER_LINKFILE}"
 
+# read https://jira.mariadb.org/browse/MDEV-573
 MYSQLREPORT_LINKFILE="mysqlreport"
-MYSQLREPORT_LINK="${LOCALCENTMINMOD_MIRROR}/centminmodparts/mysqlreport/${MYSQLREPORT_LINKFILE}"
+MYSQLREPORT_LINK='https://raw.githubusercontent.com/jb-boin/mariadb/5.5.30/debian/additions/mysqlreport'
+#MYSQLREPORT_LINK="${LOCALCENTMINMOD_MIRROR}/centminmodparts/mysqlreport/${MYSQLREPORT_LINKFILE}"
 
-# wget renamed
+# https://github.com/major/MySQLTuner-perl
 MYSQLTUNER_LINKFILE="mysqltuner.pl"
-MYSQLTUNER_LINK="${LOCALCENTMINMOD_MIRROR}/centminmodparts/mysqltuner/mysqltuner.txt"
+MYSQLTUNER_LINK='https://raw.githubusercontent.com/major/MySQLTuner-perl/master/mysqltuner.pl'
+#MYSQLTUNER_LINK="${LOCALCENTMINMOD_MIRROR}/centminmodparts/mysqltuner/mysqltuner.txt"
 
 NGX_LINKFILE="nginx-${NGINX_VERSION}.tar.gz"
 NGX_LINK="http://nginx.org/download/${NGX_LINKFILE}"
@@ -393,7 +404,7 @@ OPENSSL_LINK="https://www.openssl.org/source/${OPENSSL_LINKFILE}"
 OPENSSL_LINKLOCAL="${LOCALCENTMINMOD_MIRROR}/centminmodparts/openssl/${OPENSSL_LINKFILE}"
 
 LIBRESSL_LINKFILE="libressl-${LIBRESSL_VERSION}.tar.gz"
-LIBRESSL_LINK="http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-${LIBRESSL_VERSION}.tar.gz"
+LIBRESSL_LINK="http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/${LIBRESSL_LINKFILE}"
 LIBRESSL_LINKLOCAL="${LOCALCENTMINMOD_MIRROR}/centminmodparts/libressl/${LIBRESSL_LINKFILE}"
 
 # wget renamed github
@@ -409,7 +420,7 @@ SIEGE_LINK="http://download.joedog.org/siege/${SIEGE_LINKFILE}"
 SIEGE_LINKLOCAL="${LOCALCENTMINMOD_MIRROR}/centminmodparts/siege/${SIEGE_LINKFILE}"
 
 SPROXY_LINKFILE="sproxy-latest.tar.gz"
-SPROXY_LINK="http://www.joedog.org/pub/sproxy/${SPROXY_LINKFILE}"
+SPROXY_LINK="http://download.joedog.org/sproxy/${SPROXY_LINKFILE}"
 SPROXY_LINKLOCAL="${LOCALCENTMINMOD_MIRROR}/centminmodparts/siege/${SPROXY_LINKFILE}"
 
 PYTHON_LINKFILE="Python-${PYTHON_VERSION}.tgz"
@@ -430,14 +441,14 @@ ZENDOPCACHE_LINK="https://pecl.php.net/get/${ZENDOPCACHE_LINKFILE}"
 ZENDOPCACHE_LINKLOCAL="${LOCALCENTMINMOD_MIRROR}/centminmodparts/zendopcache/${ZENDOPCACHE_LINKFILE}"
 
 NSD_LINKFILE="nsd-${NSD_VERSION}.tar.gz"
-#NSD_LINK="http://www.nlnetlabs.nl/downloads/nsd/${NSD_LINKFILE}"
-NSD_LINK="${LOCALCENTMINMOD_MIRROR}/centminmodparts/nsd/${NSD_LINKFILE}"
+NSD_LINK="https://www.nlnetlabs.nl/downloads/nsd/${NSD_LINKFILE}"
 
 CSF_LINKFILE="csf.tgz"
 CSF_LINK="http://download.configserver.com/${CSF_LINKFILE}"
 
+# https://github.com/pypa/setuptools/blob/master/docs/setuptools.txt
 EZSETUPLINKFILE='ez_setup.py'
-EZSETUPLINK="https://bitbucket.org/pypa/setuptools/raw/bootstrap/${EZSETUPLINKFILE}"
+EZSETUPLINK="https://bootstrap.pypa.io/${EZSETUPLINKFILE}"
 
 # wget renamed github
 AXEK_LINKFILE="axel-${AXEL_VER}.tar.gz"
@@ -446,7 +457,7 @@ AXEK_LINKGITLAB="https://gitlab.com/centminmod-github-mirror/axel/repository/arc
 AXEK_LINKLOCAL="${LOCALCENTMINMOD_MIRROR}/centminmodparts/axel/${AXEL_VER}.tar.gz"
 
 WGET_FILENAME="wget-${WGET_VERSION}.tar.gz"
-WGET_LINK="https://centminmod.com/centminmodparts/wget/${WGET_FILENAME}"
+WGET_LINK="${LOCALCENTMINMOD_MIRROR}/centminmodparts/wget/${WGET_FILENAME}"
 
 LIBUNWIND_LINKFILE="libunwind-${LIBUNWIND_VERSION}.tar.gz"
 LIBUNWIND_LINKDIR="libunwind-${LIBUNWIND_VERSION}"

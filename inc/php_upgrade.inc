@@ -217,7 +217,7 @@ else
     read -ep "PHP Upgrade - Would you like to continue? [y/n] " key
     if [[ "$key" = [nN] ]];
     then
-        exit 0
+        exit 100
     fi
 fi # UALL
 
@@ -309,45 +309,16 @@ if [ "$(rpm -qa | grep '^php*' | grep -v 'phonon-backend-gstreamer')" ]; then
     echo "yum -y erase php*"
     yum -y erase php*
 fi
+
     if [[ "$PHPNG_YES" != [yY] ]]; then
-        phpgeolocation
-    
         if [ -f "$(which figlet)" ]; then
             figlet -ckf standard "PHP: Download"
         fi
-    
-        curl -4Is --connect-timeout 5 --max-time 5 "${PHP_MIRRORURL}/get/php-${phpver}.tar.${PHPEXTSION}/from/this/mirror" | grep 'HTTP\/' | grep '404'
-        PHPGEO_CURLCHECK=$?
-        if [[ "$PHPGEO_CURLCHECK" = '0' ]]; then
-            PHP_MIRRORURL="http://php.net"
-            PHPUPGRADE_MIRRORURL="$PHP_MIRRORURL"
-        fi
-        if [ -s "php-${phpver}.tar.${PHPEXTSION}" ]; then
-            cecho "php ${phpver} Archive found, skipping download..." $boldgreen
-        else
-            $DOWNLOADAPP "${PHP_MIRRORURL}/get/php-${phpver}.tar.${PHPEXTSION}/from/this/mirror" $AXELPHPUPGRADETARGZ $WGETRETRY
-            ERROR=$?
-            if [[ "$ERROR" != '0' ]]; then
-                cecho "Error: php-${phpver}.tar.${PHPEXTSION} download failed." $boldgreen
-                checklogdetails
-                exit
-            else 
-                cecho "Download done." $boldyellow
-                echo ""
-            fi
-        fi
-    
-        tar $PHPTAR_FLAGS "php-${phpver}.tar.${PHPEXTSION}"
-    
-        ERROR=$?
-        if [[ "$ERROR" != '0' ]]; then
-            cecho "Error: php-${phpver}.tar.${PHPEXTSION} extraction failed." $boldgreen
-            checklogdetails
-            exit
-        else 
-            cecho "php-${phpver}.tar.${PHPEXTSION} valid file." $boldyellow
-            echo ""
-        fi
+
+        phpgeolocation
+
+        local phparchfile="php-${phpver}.tar.${PHPEXTSION}"
+        filetarball "${PHP_MIRRORURL}/get/${phparchfile}/from/this/mirror" "$phparchfile"
     fi
 
     cd "php-${phpver}"
@@ -433,7 +404,7 @@ funct_phpconfigure
             git log --numstat --pretty="%n%h %an %aD %n%s" --shortstat -1
             popd
         fi
-    	exit
+    	exit $ERR
 	else
     	echo -e "\n`date`\nSuccess: PHP configure ok\n"
         cmservice php-fpm restart
@@ -546,7 +517,7 @@ fi
             git log --numstat --pretty="%n%h %an %aD %n%s" --shortstat -1
             popd
         fi
-    	exit
+    	exit $ERR
 	else
     	echo -e "\n`date`\nSuccess: PHP make ok\n"
         cmservice php-fpm restart
@@ -596,7 +567,7 @@ fi
             git log --numstat --pretty="%n%h %an %aD %n%s" --shortstat -1
             popd
         fi
-    	exit
+    	exit $ERR
 	else
     	echo -e "\n`date`\nSuccess: PHP was installed properly\n"
         echo

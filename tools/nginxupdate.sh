@@ -995,8 +995,6 @@ fi
 
 luajitinstall
 
-funct_nginxmodules
-
 check_requestscheme
 
     # Install nginx

@@ -1,5 +1,6 @@
 #!/bin/sh
 export PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin"
+set -o pipefail
 #####################################################
 EMAIL=''          # Server notification email address enter only 1 address
 PUSHOVER_EMAIL='' # Signup pushover.net push email notifications to mobile & tablets
@@ -596,7 +597,7 @@ PYTHON_VERSION='2.7.10'       # Use this version of Python
 SIEGE_VERSION='4.0.2'
 
 CURL_TIMEOUTS=' --max-time 5 --connect-timeout 5'
-WGETOPT='-cnv --no-dns-cache -4'
+WGETOPT='-cnv --no-dns-cache -4 --no-check-certificate'
 AXEL_VER='2.6'               # Axel source compile version https://github.com/eribertomota/axel/releases
 ###############################################################
 # experimental Intel compiled optimisations 
@@ -998,30 +999,40 @@ checkfor_lowmem
 ###############################################################
 # FUNCTIONS
 
-if [[ "$CENTOS_SEVEN" = 7 || "$CENTOS_SIX" = 6 ]]; then
-    DOWNLOADAPP='axel'
-    WGETRETRY=''
-else
-    DOWNLOADAPP="wget ${WGETOPT} --progress=bar"
-    WGETRETRY='--tries=3'
-fi
+WGETRETRY=''
 
 sar_call() {
   $SARCALL 1 1
 }
 
 download_cmd() {
-  HTTPS_AXELCHECK=$(echo "$1" |awk -F '://' '{print $1}')
-  if [[ "$(curl -4Isv $1 2>&1 | egrep 'ECDSA')" ]]; then
-    # axel doesn't natively support ECC 256bit ssl certs
-    # with ECDSA ciphers due to CentOS system OpenSSL 1.0.2e
-    echo "ECDSA SSL Cipher BASED HTTPS detected, switching from axel to wget"
-    DOWNLOADAPP="wget ${WGETOPT}"
-  elif [[ "$CENTOS_SIX" = '6' && "$HTTPS_AXELCHECK" = 'https' ]]; then
-    echo "CentOS 6 Axel fallback to wget for HTTPS download"
-    DOWNLOADAPP="wget ${WGETOPT}"
-  fi
-  $DOWNLOADAPP $1 $2 $3 $4
+   if [[ "$CENTOS_SEVEN" == 7 || "$CENTOS_SIX" == 6 ]]; then
+      DOWNLOADAPP='axel'
+      local proto=${1%%://*}
+      if [[ "$proto" == 'https' ]]; then
+         if [[ "$CENTOS_SIX" == 6 ]]; then
+            echo "CentOS 6 Axel fallback to wget for HTTPS download"
+            DOWNLOADAPP="wget ${WGETOPT} --progress=bar --tries=3"
+         elif [[ "$(curl -Isv $1 2>&1 | egrep 'ECDSA')" ]]; then
+            # axel doesn't natively support ECC 256bit ssl certs with ECDSA ciphers due to CentOS system OpenSSL 1.0.2e
+            echo "ECDSA SSL Cipher BASED HTTPS detected, switching from axel to wget"
+            DOWNLOADAPP="wget ${WGETOPT} --progress=bar --tries=3"
+         fi
+      fi
+   else
+      DOWNLOADAPP="wget ${WGETOPT} --progress=bar --tries=3"
+   fi
+   
+   local addopt=''
+   if [ -n "$2" ]; then
+      if [[ "$DOWNLOADAPP" == 'axel' ]]; then
+         addopt="-o $2"
+      else
+         addopt="-O $2"
+      fi
+   fi
+
+   $DOWNLOADAPP $1 $addopt
 }
 
 # if [ "${ARCH_OVERRIDE}" != '' ]
@@ -1551,7 +1562,7 @@ ngxinstallstarttime=$(TZ=UTC date +%s.%N)
 {    
 ngxinstallmain
 } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_ngxinstalltime_${DT}.log"
-wait
+ERR=$?; [ "$ERR" != 0 ] && exit $ERR
 
 ngxinstallendtime=$(TZ=UTC date +%s.%N)
 NGXINSTALLTIME=$(echo "scale=2;$ngxinstallendtime - $ngxinstallstarttime"|bc )
@@ -2107,7 +2118,7 @@ if [[ "$1" = 'install' ]]; then
     {    
     alldownloads
     } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_downloadtimes_${DT}.log"
-    wait
+    ERR=$?; [ "$ERR" != 0 ] && exit $ERR
 
     dlendtime=$(TZ=UTC date +%s.%N)
     DOWNLOADTIME=$(echo "scale=2;$dlendtime - $dlstarttime"|bc )
@@ -2137,7 +2148,8 @@ EOF
     echo "$SCRIPT_VERSION" > /etc/centminmod-release
     #echo "$SCRIPT_VERSION #`date`" >> /etc/centminmod-versionlog
     } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_install.log"
-    
+    ERR=$?; [ "$ERR" != 0 ] && { checklogdetails; exit $ERR; }
+
     if [ "$CCACHEINSTALL" == 'y' ]; then
     
         # check if ccache installed first
@@ -2252,7 +2264,8 @@ EOF
             echo "$SCRIPT_VERSION" > /etc/centminmod-release
             #echo "$SCRIPT_VERSION #`date`" >> /etc/centminmod-versionlog
             } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_install.log"
-            
+            ERR=$?; [ "$ERR" != 0 ] && { checklogdetails; exit $ERR; }
+
             if [ "$CCACHEINSTALL" == 'y' ]; then
             
                 # check if ccache installed first
@@ -2280,7 +2293,8 @@ EOF
         {
         funct_nginxaddvhost
         } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_nginx_addvhost.log"
-        
+        ERR=$?; [ "$ERR" != 0 ] && { checklogdetails; exit $ERR; }
+
         ;;
         3|nsdsetup)
         if [ -f "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_nsd_setup.log" ]; then
@@ -2293,7 +2307,8 @@ EOF
         {
         funct_nsdsetup
         } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_nsd_setup.log"
-        
+        ERR=$?; [ "$ERR" != 0 ] && { checklogdetails; exit $ERR; }
+
         ;;
         4|nginxupgrade)
         if [ -f "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_nginx_upgrade.log" ]; then
@@ -2320,7 +2335,8 @@ EOF
         fi
         funct_nginxupgrade
         } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_nginx_upgrade.log"
-        
+        ERR=$?; [ "$ERR" != 0 ] && { checklogdetails; exit $ERR; }
+
         if [ "$CCACHEINSTALL" == 'y' ]; then
         
             # check if ccache installed first
@@ -2361,7 +2377,8 @@ EOF
         fi
         funct_phpupgrade
         } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_php_upgrade.log"
-        
+        ERR=$?; [ "$ERR" != 0 ] && { checklogdetails; exit $ERR; }
+
         if [ "$CCACHEINSTALL" == 'y' ]; then
         
             # check if ccache installed first
@@ -2395,7 +2412,8 @@ EOF
         
         funct_xcachereinstall
         } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_xcache_reinstall.log"
-        
+        ERR=$?; [ "$ERR" != 0 ] && { checklogdetails; exit $ERR; }
+
         if [ "$CCACHEINSTALL" == 'y' ]; then
         
             # check if ccache installed first
@@ -2428,7 +2446,8 @@ EOF
         
         funct_apcreinstall
         } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_apc_reinstall.log"
-        
+        ERR=$?; [ "$ERR" != 0 ] && { checklogdetails; exit $ERR; }
+
         if [ "$CCACHEINSTALL" == 'y' ]; then
         
             # check if ccache installed first
@@ -2463,7 +2482,8 @@ EOF
         
         funct_installxcache
         } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_xcache_install.log"
-        
+        ERR=$?; [ "$ERR" != 0 ] && { checklogdetails; exit $ERR; }
+
         if [ "$CCACHEINSTALL" == 'y' ]; then
         
             # check if ccache installed first
@@ -2496,7 +2516,8 @@ EOF
         
         funct_installapc
         } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_apc_install.log"
-        
+        ERR=$?; [ "$ERR" != 0 ] && { checklogdetails; exit $ERR; }
+
         if [ "$CCACHEINSTALL" == 'y' ]; then
         
             # check if ccache installed first
@@ -2529,7 +2550,8 @@ EOF
         
         funct_memcachedreinstall
         } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_memcached_reinstall.log"
-        
+        ERR=$?; [ "$ERR" != 0 ] && { checklogdetails; exit $ERR; }
+
         if [ "$CCACHEINSTALL" == 'y' ]; then
         
             # check if ccache installed first
@@ -2586,7 +2608,8 @@ EOF
         
         imagickinstall
         } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_php-imagick-install.log"
-        
+        ERR=$?; [ "$ERR" != 0 ] && { checklogdetails; exit $ERR; }
+
         if [ "$CCACHEINSTALL" == 'y' ]; then
         
             # check if ccache installed first
@@ -2630,7 +2653,8 @@ EOF
         funct_plzipinstall
         funct_p7zipinstall
         } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_multithread_compression-install.log"
-        
+        ERR=$?; [ "$ERR" != 0 ] && { checklogdetails; exit $ERR; }
+
         if [ "$CCACHEINSTALL" == 'y' ]; then
         
             # check if ccache installed first
@@ -2661,7 +2685,8 @@ EOF
         
         suhosinsetup
         } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_suhosin_install.log"
-        
+        ERR=$?; [ "$ERR" != 0 ] && { checklogdetails; exit $ERR; }
+
         if [ "$CCACHEINSTALL" == 'y' ]; then
         
             # check if ccache installed first
@@ -2738,7 +2763,8 @@ EOF
         siege -V
 
         } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_update_all.log"
-        
+        ERR=$?; [ "$ERR" != 0 ] && { checklogdetails; exit $ERR; }
+
         if [ "$CCACHEINSTALL" == 'y' ]; then
         
             # check if ccache installed first
@@ -2765,6 +2791,7 @@ EOF
         {
         wpacctsetup
         } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_wordpress_addvhost.log"
+        ERR=$?; [ "$ERR" != 0 ] && { checklogdetails; exit $ERR; }
         
         ;;        
         23|cmupdatemenu)

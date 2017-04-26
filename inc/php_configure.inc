@@ -674,20 +674,54 @@ else
 ../configure --enable-fpm${OPCACHEOPT}${PHPINTLOPT}${PCNTLOPT}${MCRYPT}${RECODEOPT}${SNMPOPT} --with-mhash --with-zlib --with-gettext --enable-exif --enable-zip --with-bz2 --enable-soap --enable-sockets --enable-sysvmsg --enable-sysvsem --enable-sysvshm --enable-shmop --with-pear --enable-mbstring $PHP_OPENSSLOPT --with-mysql=mysqlnd --with-libdir=${LIBDIR} --with-mysqli=mysqlnd --with-mysql-sock=${PHP_MYSQLSOCKPATH}/mysql.sock --with-curl --with-gd --with-xmlrpc --enable-bcmath --enable-calendar${FTPEXTOPT} --enable-gd-native-ttf --with-freetype-dir=${PLIBDIR} --with-jpeg-dir=${PLIBDIR} --with-png-dir=${PLIBDIR} --with-xpm-dir=${PLIBDIR}${LIBVPXOPT}${TLIBOPT} --enable-pdo${PDOSQLLITE_OPT} --with-pdo-mysql=mysqlnd${MSSQLOPT} --enable-inline-optimization --with-imap --with-imap-ssl --with-kerberos --with-readline --with-libedit --with-gmp --with-pspell --with-tidy --with-enchant --with-fpm-user=nginx --with-fpm-group=nginx${FILEINFOOPT}${SQLLITEOPT}${LDAPOPT}${PDOPGSQL_OPT}${OPCACHEHUGEPAGES_OPT} --with-config-file-scan-dir=${CONFIGSCANDIR}${PHPDEBUGOPT}${PHP_EXTRAOPTS}
 
 fi
+
+ERR=$?
+if [ "$ERR" != 0 ]; then
+   cecho "\nError: $ERR, PHP configure failed!\n" $boldred
+   exit $ERR
+else
+   cecho "\nSuccess: PHP configure ok\n" $boldyellow
+fi
+
 sar_call
-    echo
-    echo "php_configure.inc make${MAKETHREADS_PHP}"
-    time make${MAKETHREADS_PHP}
-    sar_call
-    echo
+echo
+echo "php_configure.inc make${MAKETHREADS_PHP}"
+time make${MAKETHREADS_PHP}
 
-	if [[ "$PHPMAKETEST" = [yY] ]]; then
-		time make test
-    sar_call
-	fi
+ERR=$?
+if [ "$ERR" != 0 ]; then
+   cecho "\nError: $ERR, PHP make failed!\n" $boldred
+   exit $ERR
+else
+   cecho "\nSuccess: PHP make ok\n" $boldyellow
+fi
 
-    time make install
-    sar_call
+sar_call
+echo
+
+if [[ "$PHPMAKETEST" = [yY] ]]; then
+   time make test
+   ERR=$?
+   if [ "$ERR" != 0 ]; then
+      cecho "\nError: $ERR, PHP make test failed!\n" $boldred
+      exit $ERR
+   else
+      cecho "\nSuccess: PHP make test ok\n" $boldyellow
+   fi
+   sar_call
+fi
+
+time make install
+
+ERR=$?
+if [ "$ERR" != 0 ]; then
+   cecho "\nError: $ERR, PHP make install failed!\n" $boldred
+   exit $ERR
+else
+   cecho "\nSuccess: PHP make install ok\n" $boldyellow
+fi
+
+sar_call
 
 if [[ "$STRIPPHP" = [yY] ]]; then
     echo
@@ -730,8 +764,7 @@ if [[ ! -s /usr/local/bin/phpize ]]; then
 	cecho "----------------------------------------------------------------------------------" $boldyellow
 	echo "PHP was not installed properly"
 	cecho "----------------------------------------------------------------------------------" $boldyellow
-	#checklogdetails
-	#exit
+	exit 64
 fi
 
 }

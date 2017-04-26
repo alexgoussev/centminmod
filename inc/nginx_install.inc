@@ -226,6 +226,14 @@ fi
 
 funct_nginxconfigure
 
+    ERR=$?
+    if [ "$ERR" != 0 ]; then
+        cecho "\nError: $ERR, Nginx configure failed!\n" $boldred
+        exit $ERR
+    else
+        cecho "\nSuccess: Nginx configure ok\n" $boldyellow
+    fi
+
     if [ -f "$(which figlet)" ]; then
         figlet -ckf standard "Nginx Make"
     fi
@@ -241,6 +249,15 @@ funct_nginxconfigure
             time make
         fi
     fi
+
+    ERR=$?
+    if [ "$ERR" != 0 ]; then
+        cecho "\nError: $ERR, Nginx make failed!\n" $boldred
+        exit $ERR
+    else
+        cecho "\nSuccess: Nginx make ok\n" $boldyellow
+    fi
+
     sar_call
 
     if [[ "$STRIPNGINX" = [yY] ]]; then
@@ -259,6 +276,15 @@ funct_nginxconfigure
     fi
 
     time make install
+
+    ERR=$?
+    if [ "$ERR" != 0 ]; then
+        cecho "\nError: $ERR, Nginx make install failed!\n" $boldred
+        exit $ERR
+    else
+        cecho "\nSuccess: Nginx make install ok\n" $boldyellow
+    fi
+
     sar_call
 
 if [[ "$CLANG" = [yY] ]]; then
