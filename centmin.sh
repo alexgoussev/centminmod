@@ -661,6 +661,12 @@ else
   fi
 fi
 
+# ensure if ORESTY_LUANGINX is enabled, that the other required
+# Openresty modules are enabled if folks forget to enable them
+if [[ "$ORESTY_LUANGINX" = [yY] ]]; then
+    NGINX_OPENRESTY='y'
+fi
+
 if [[ "$CENTOS_SEVEN" = '7' ]]; then
   AXEL_VER='2.12'
 fi
@@ -673,6 +679,29 @@ fi
 if [[ "$1" = 'install' ]]; then
   INITIALINSTALL='y'
   export INITIALINSTALL='y'
+fi
+
+CUR_DIR=$SCRIPT_DIR # Get current directory.
+CM_INSTALLDIR=$CUR_DIR
+
+if [ -f "${CM_INSTALLDIR}/inc/custom_config.inc" ]; then
+   source "inc/custom_config.inc"
+   if [ -d "${CENTMINLOGDIR}" ]; then
+      cat "inc/custom_config.inc" > "${CENTMINLOGDIR}/inc-custom-config-settings_${DT}.log"
+   fi
+fi
+if [ -f "${CONFIGSCANBASE}/custom_config.inc" ]; then
+   # default is at /etc/centminmod/custom_config.inc
+   source "${CONFIGSCANBASE}/custom_config.inc"
+   if [ -d "${CENTMINLOGDIR}" ]; then
+      cat "${CONFIGSCANBASE}/custom_config.inc" > "${CENTMINLOGDIR}/etc-centminmod-custom-config-settings_${DT}.log"
+   fi
+fi
+if [ -f "${CM_INSTALLDIR}/inc/z_custom.inc" ]; then
+   source "${CM_INSTALLDIR}/inc/z_custom.inc"
+   if [ -d "${CENTMINLOGDIR}" ]; then
+      cat "${CM_INSTALLDIR}/inc/z_custom.inc" > "${CENTMINLOGDIR}/inc-zcustom-config-settings_${DT}.log"
+   fi
 fi
 
 # source "inc/mainmenu.inc"
@@ -792,6 +821,7 @@ source "inc/zlib.inc"
 source "inc/updater_submenu.inc"
 source "inc/centminfinish.inc"
 
+centminlog
 checkcentosver
 mysqltmpdir
 
@@ -846,42 +876,6 @@ KEYPRESS_PARAM='-s -n1 -p'   # Read a keypress without hitting ENTER.
 		# -p means echo the following prompt before reading input
 ASKCMD="read $KEYPRESS_PARAM "
 # MACHINE_TYPE=`uname -m` # Used to detect if OS is 64bit or not.
-
-CUR_DIR=$SCRIPT_DIR # Get current directory.
-CM_INSTALLDIR=$CUR_DIR
-
-    # echo "centmin.sh \${CUR_DIR} & \${CM_INSTALLDIR}"
-    # echo ${CUR_DIR}
-    # echo ${CM_INSTALLDIR}    
-
-if [ -f "${CM_INSTALLDIR}/inc/custom_config.inc" ]; then
-    source "inc/custom_config.inc"
-    if [ -d "${CENTMINLOGDIR}" ]; then
-        cat "inc/custom_config.inc" > "${CENTMINLOGDIR}/inc-custom-config-settings_${DT}.log"
-    fi
-fi
-
-if [ -f "${CONFIGSCANBASE}/custom_config.inc" ]; then
-    # default is at /etc/centminmod/custom_config.inc
-    source "${CONFIGSCANBASE}/custom_config.inc"
-    if [ -d "${CENTMINLOGDIR}" ]; then
-        cat "${CONFIGSCANBASE}/custom_config.inc" > "${CENTMINLOGDIR}/etc-centminmod-custom-config-settings_${DT}.log"
-    fi
-fi
-
-if [ -f "${CM_INSTALLDIR}/inc/z_custom.inc" ]; then
-    source "${CM_INSTALLDIR}/inc/z_custom.inc"
-    if [ -d "${CENTMINLOGDIR}" ]; then
-        cat "${CM_INSTALLDIR}/inc/z_custom.inc" > "${CENTMINLOGDIR}/inc-zcustom-config-settings_${DT}.log"
-    fi
-fi
-
-# ensure if ORESTY_LUANGINX is enabled, that the other required
-# Openresty modules are enabled if folks forget to enable them
-if [[ "$ORESTY_LUANGINX" = [yY] ]]; then
-    NGINX_OPENRESTY='y'
-    LIBRESSL_SWITCH='n'
-fi
 
 if [[ "$(uname -m)" = 'x86_64' ]]; then
   if [ ! "$(grep -w 'exclude' /etc/yum.conf)" ]; then
