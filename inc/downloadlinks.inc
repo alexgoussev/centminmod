@@ -197,6 +197,9 @@ NGX_PAGESPEEDLINKGITLAB="https://gitlab.com/centminmod-github-mirror/ngx_pagespe
 NGX_PAGESPEEDPSOLINKLFILE="ngx_pagespeed-psol-${NGINX_PAGESPEEDPSOL_VER}.tar.gz"
 NGX_PAGESPEEDPSOLINKL="https://dl.google.com/dl/page-speed/psol/${NGINX_PAGESPEEDPSOL_VER}.tar.gz"
 
+NGX_RTMPLINKFILE="ngx-rtmp-master.tar.gz"
+NGX_RTMPLINK="https://github.com/arut/nginx-rtmp-module/archive/master.tar.gz"
+
 NGX_FANCYINDEXLINKFILE="ngx-fancyindex-${NGINX_FANCYINDEXVER}.tar.gz"
 NGX_FANCYINDEXLINK="https://github.com/aperezdc/ngx-fancyindex/archive/v${NGINX_FANCYINDEXVER}.tar.gz"
 

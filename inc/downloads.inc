@@ -335,6 +335,9 @@ nginxpgspeedtarball() {
 
 ###############################################
 ngxmoduletarball() {
+   echo 'Download ngx-rtmp Nginx module:'
+   filetarball "$NGX_RTMPLINK" "$NGX_RTMPLINKFILE"
+   
    echo 'Download ngx-fancyindex Nginx module:'
    filetarball "$NGX_FANCYINDEXLINK" "$NGX_FANCYINDEXLINKFILE"
 

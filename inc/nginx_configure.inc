@@ -929,7 +929,7 @@ if [[ "$CENTOS_SEVEN" = '7' || "$CENTOS_SIX" = '6' ]]; then
 	fi
 
 	if [[ "$NGINX_RTMP" = [yY] ]]; then
-		RTMPOPT=" --add-module=../nginx-rtmp-module"
+		RTMPOPT=" --add-module=../nginx-rtmp-module-master"
 	else
 		RTMPOPT=""
 	fi		
@@ -1456,7 +1456,7 @@ else
 	fi
 
 	if [[ "$NGINX_RTMP" = [yY] ]]; then
-		RTMPOPT=" --add-module=../nginx-rtmp-module"
+		RTMPOPT=" --add-module=../nginx-rtmp-module-master"
 	else
 		RTMPOPT=""
 	fi		
