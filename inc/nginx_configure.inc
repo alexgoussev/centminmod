@@ -67,13 +67,9 @@ ngx_dynamicfunction() {
    echo "NGX_DYNAMICCHECK nginx_configure"
    pwd
    dynamicmodule_file
-   if [ "$ngver" ]; then
-      DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-$ngver/src/core/nginx.h")
-      echo "$DETECT_NGXVER"
-   else
-      DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-${NGINX_VERSION}/src/core/nginx.h")
-      echo "$DETECT_NGXVER"
-   fi
+   DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-${ngver:-$NGINX_VERSION}/src/core/nginx.h")
+   echo "$DETECT_NGXVER"
+	echo
    if [[ "$DETECT_NGXVER" -ge '1011005' && "$DYNAMIC_SUPPORT" = [yY] ]]; then
       WITHCOMPAT_OPT=' --with-compat'
    else
@@ -1777,10 +1773,9 @@ fi
 
 # NGINX 1.9 stream support & 1.8 threads
 # http://nginx.org/en/docs/stream/ngx_stream_core_module.html
-NGXINSTALL_VER=$(echo "$NGINX_VERSION" | cut -d . -f1,2)
-NGXUPGRADE_VER=$(echo "$ngver" | cut -d . -f1,2)
-if [[ "$ngver" && "$NGXUPGRADE_VER" = '1.9' ]] || [[ "$ngver" && "$NGXUPGRADE_VER" = '1.10' ]] || [[ "$ngver" && "$NGXUPGRADE_VER" = '1.11' ]] || [[ "$ngver" && "$NGXUPGRADE_VER" = '1.12' ]] || [[ "$ngver" && "$NGXUPGRADE_VER" = '1.13' ]]; then
-# if [[ "$ngver" && "$NGXUPGRADE_VER" > '1.9' ]]; then
+local ngxmajorv=$(echo "${ngver:-$NGINX_VERSION}" | cut -d . -f1)
+local ngxminorv=$(echo "${ngver:-$NGINX_VERSION}" | cut -d . -f2)
+if [[ $ngxmajorv == 1 && $ngxminorv > 8 || $ngxmajorv > 1 ]]; then
 	if [[ "$NGINX_STREAM" = [yY] ]]; then
 		if [[ "$DYNAMIC_SUPPORT" = [yY] && "$NGXDYNAMIC_STREAM" = [yY] ]]; then
 			STREAM=' --with-stream=dynamic --with-stream_ssl_module'
@@ -1818,53 +1813,11 @@ if [[ "$ngver" && "$NGXUPGRADE_VER" = '1.9' ]] || [[ "$ngver" && "$NGXUPGRADE_VE
 	# workaround for nginx 1.9 compatibility
 	# sed -i.bak 's|ngx_http_set_connection_log|ngx_set_connection_log|g' ${DIR_TMP}/lua-nginx-module-${ORESTY_LUANGINXVER}/src/ngx_http_lua_initworkerby.c
 	# sed -i.bak 's|ngx_http_set_connection_log|ngx_set_connection_log|g' ${DIR_TMP}/lua-nginx-module-${ORESTY_LUANGINXVER}/src/ngx_http_lua_timer.c
-elif [[ -z "$ngver" && "$NGXINSTALL_VER" = '1.9' ]] || [[ -z "$ngver" && "$NGXINSTALL_VER" = '1.10' ]] || [[ -z "$ngver" && "$NGXINSTALL_VER" = '1.11' ]] || [[ -z "$ngver" && "$NGXINSTALL_VER" = '1.12' ]] || [[ -z "$ngver" && "$NGXINSTALL_VER" = '1.13' ]]; then
-	if [[ "$NGINX_STREAM" = [yY] ]]; then
-		if [[ "$DYNAMIC_SUPPORT" = [yY] && "$NGXDYNAMIC_STREAM" = [yY] ]]; then
-			STREAM=' --with-stream=dynamic --with-stream_ssl_module'
-			if [ -f /usr/local/nginx/conf/dynamic-modules.conf ]; then
-				echo "load_module \"modules/ngx_stream_module.so\";" >> /usr/local/nginx/conf/dynamic-modules.conf
-			fi
-			if [ -f /usr/local/nginx/modules/ngx_stream_module.so.old ]; then
-				rm -rf /usr/local/nginx/modules/ngx_stream_module.so.old
-			fi
-		else
-			STREAM=' --with-stream --with-stream_ssl_module'
-			# if NGXDYNAMIC_STREAM='y' was previously set with nginx 1.9.11+, then the nginx
-			# dynamic module /usr/local/nginx/modules/ngx_http_lua_module.so would of been
-			# created
-			# however, it seems if you then later recompile nginx with NGXDYNAMIC_STREAM='y'
-			# the old dynamic module would still be left in nginx dynamic modules directory
-			# this is a check for that old dynamic module and if it exists, remove it
-			if [[ -f /usr/local/nginx/modules/ngx_stream_module.so && "$NGXDYNAMIC_MANUALOVERRIDE" != [yY] ]]; then
-				rm -rf /usr/local/nginx/modules/ngx_stream_module.so
-			fi
-			if [ -f /usr/local/nginx/modules/ngx_stream_module.so.old ]; then
-				rm -rf /usr/local/nginx/modules/ngx_stream_module.so.old
-			fi
-		fi
-	else
-		STREAM=""
-			if [[ -f /usr/local/nginx/modules/ngx_stream_module.so && "$NGXDYNAMIC_MANUALOVERRIDE" != [yY] ]]; then
-				rm -rf /usr/local/nginx/modules/ngx_stream_module.so
-			fi
-			if [ -f /usr/local/nginx/modules/ngx_stream_module.so.old ]; then
-				rm -rf /usr/local/nginx/modules/ngx_stream_module.so.old
-			fi
-	fi
-	THREADS=' --with-threads'
-	# workaround for nginx 1.9 compatibility
-	# sed -i.bak 's|ngx_http_set_connection_log|ngx_set_connection_log|g' ${DIR_TMP}/lua-nginx-module-${ORESTY_LUANGINXVER}/src/ngx_http_lua_initworkerby.c
-	# sed -i.bak 's|ngx_http_set_connection_log|ngx_set_connection_log|g' ${DIR_TMP}/lua-nginx-module-${ORESTY_LUANGINXVER}/src/ngx_http_lua_timer.c	
-elif [[ "$ngver" && "$NGXUPGRADE_VER" = '1.8' ]]; then
-	STREAM=""
-	THREADS=' --with-threads'
-elif [[ -z "$ngver" && "$NGXINSTALL_VER" = '1.8' ]]; then
-	STREAM=""
-	THREADS=' --with-threads'
 else
-	STREAM=""
-	THREADS=""
+	STREAM=''
+	THREADS=''
+	if [[ $ngxmajorv == 1 && $ngxminorv = 8 ]]; then
+      THREADS=' --with-threads'
 	fi
 fi
 
@@ -2476,10 +2429,9 @@ GPF
       sed -i "s|{{uri}}|$NEWURI|" /usr/local/nginx/html/vhost_status.html
    fi
 
-   NGXINSTALL_VER_MINOR=$(echo "$NGINX_VERSION" | cut -d . -f2)
-   NGXUPGRADE_VER_MINOR=$(echo "$ngver" | cut -d . -f2)
-
-   if [[ "$NGXUPGRADE_VER_MINOR" -ge 9 ]] || [[ -z "$ngver" && "$NGXINSTALL_VER_MINOR" -ge 9 ]] ; then
+   local ngxmajorv=$(echo "${ngver:-$NGINX_VERSION}" | cut -d . -f1)
+   local ngxminorv=$(echo "${ngver:-$NGINX_VERSION}" | cut -d . -f2)
+   if [[ $ngxmajorv == 1 && $ngxminorv > 8 || $ngxmajorv > 1 ]]; then
       if [ -f /usr/local/nginx/conf/redisupstream.conf ]; then
          sed -i "s|^#include \/usr\/local\/nginx\/conf\/redisupstream.conf|include \/usr\/local\/nginx\/conf\/redisupstream.conf|" /usr/local/nginx/conf/nginx.conf
       fi
