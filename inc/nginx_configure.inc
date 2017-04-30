@@ -23,83 +23,62 @@ detect_tlsonethree() {
 
 dynamicmodule_file() {
 	if [ "$ngver" ]; then
-    NGINX_DIRINSTALL="$DIR_TMP/nginx-${ngver}"
+		NGINX_DIRINSTALL="$DIR_TMP/nginx-${ngver}"
 	else
-    NGINX_DIRINSTALL="$DIR_TMP/nginx-${NGINX_VERSION}"
+		NGINX_DIRINSTALL="$DIR_TMP/nginx-${NGINX_VERSION}"
 	fi
 	NGX_DYNAMICCHECK=$(grep 'DYNAMIC_MODULES=' "$NGINX_DIRINSTALL/auto/options")
 	if [ "$NGX_DYNAMICCHECK" ]; then
-    echo
-    echo "nginx dynamic module support detected"
-    echo
-    DYNAMIC_SUPPORT=y
-    # force disable nginx modsecurity module as it conflicts with nginx
-    # 1.9.11+ dynamic module builds
-    NGINX_MODSECURITY='n'
-    # create include file to load nginx dynamic modules in main context in nginx.conf
-    if [[ "$INITIALINSTALL" != [yY] ]]; then
-      rm -rf /usr/local/nginx/conf/dynamic-modules.conf
-    fi
-    touch /usr/local/nginx/conf/dynamic-modules.conf
-    if [ ! -f /usr/local/nginx/conf/dynamic-modules-includes.conf ]; then
-      touch /usr/local/nginx/conf/dynamic-modules-includes.conf
-    fi
-    if [[ ! "$(grep -w 'dynamic-modules-includes.conf' /usr/local/nginx/conf/dynamic-modules.conf)" ]]; then
-      echo "# place custom load_module lines in this dynamic-modules-includes.conf" >> /usr/local/nginx/conf/dynamic-modules.conf
-      echo "# file so that they persistent i.e. for manually dropped in dynamic modules" >> /usr/local/nginx/conf/dynamic-modules.conf
-      echo "include /usr/local/nginx/conf/dynamic-modules-includes.conf;" >> /usr/local/nginx/conf/dynamic-modules.conf
-    fi
-    # setup include file /usr/local/nginx/conf/dynamic-modules.conf in nginx.conf
-    if [[ ! "$(grep 'dynamic-modules.conf' /usr/local/nginx/conf/nginx.conf)" ]]; then
-      sed -i 's|^pcre_jit on;|pcre_jit on;\ninclude \/usr\/local\/nginx\/conf\/dynamic-modules.conf;\n|g' /usr/local/nginx/conf/nginx.conf
-      sed -i 's|^pcre_jit off;|pcre_jit on;\ninclude \/usr\/local\/nginx\/conf\/dynamic-modules.conf;\n|g' /usr/local/nginx/conf/nginx.conf
-    fi
-    if [[ "$(grep 'dynamic-modules.conf' /usr/local/nginx/conf/nginx.conf)" ]]; then
-      sed -i 's|^#include \/usr\/local\/nginx\/conf\/dynamic-modules.conf;|include \/usr\/local\/nginx\/conf\/dynamic-modules.conf;|g' /usr/local/nginx/conf/nginx.conf
-    fi
-    # custom dynamic loading module flag include sourced file
-    if [ -f "${CONFIGSCANBASE}/custom_nginxmodules.inc" ]; then
-        # default is at /etc/centminmod/custom_nginxmodules.inc
-        source "${CONFIGSCANBASE}/custom_nginxmodules.inc"
-    fi
-	else
-    # comment out include file /usr/local/nginx/conf/dynamic-modules.conf in nginx.conf
-    # in it exists and you're moving to an nginx version that doesn't support dynamic module
-    # loading
-    if [ -f /usr/local/nginx/conf/dynamic-modules.conf ]; then
-      if [[ "$(grep 'dynamic-modules.conf' /usr/local/nginx/conf/nginx.conf)" ]]; then
-        sed -i 's|^include \/usr\/local\/nginx\/conf\/dynamic-modules.conf;|#include \/usr\/local\/nginx\/conf\/dynamic-modules.conf;|g' /usr/local/nginx/conf/nginx.conf
-      fi
-    fi
-  fi # NGX_DYNAMICCHECK check
+		echo
+		echo "nginx dynamic module support detected"
+		echo
+		DYNAMIC_SUPPORT='y'
+	   [[ ! -d '/usr/local/nginx/modules' ]] && mkdir -p '/usr/local/nginx/modules'
+		# force disable nginx modsecurity module as it conflicts with nginx
+		# 1.9.11+ dynamic module builds
+		NGINX_MODSECURITY='n'
+		# create include file to load nginx dynamic modules in main context in nginx.conf
+		if [[ "$INITIALINSTALL" != [yY] ]]; then
+			rm -rf /usr/local/nginx/conf/dynamic-modules.conf
+		fi
+		touch /usr/local/nginx/conf/dynamic-modules.conf
+		if [ ! -f /usr/local/nginx/conf/dynamic-modules-includes.conf ]; then
+			touch /usr/local/nginx/conf/dynamic-modules-includes.conf
+		fi
+		if [[ ! "$(grep -w 'dynamic-modules-includes.conf' /usr/local/nginx/conf/dynamic-modules.conf)" ]]; then
+			echo "# place custom load_module lines in this dynamic-modules-includes.conf" >> /usr/local/nginx/conf/dynamic-modules.conf
+			echo "# file so that they persistent i.e. for manually dropped in dynamic modules" >> /usr/local/nginx/conf/dynamic-modules.conf
+			echo "include /usr/local/nginx/conf/dynamic-modules-includes.conf;" >> /usr/local/nginx/conf/dynamic-modules.conf
+		fi
+		# custom dynamic loading module flag include sourced file
+		if [ -f "${CONFIGSCANBASE}/custom_nginxmodules.inc" ]; then
+   			# default is at /etc/centminmod/custom_nginxmodules.inc
+   			source "${CONFIGSCANBASE}/custom_nginxmodules.inc"
+		fi
+	fi # NGX_DYNAMICCHECK check
 }
 
 ngx_dynamicfunction() {
-  if [ ! -d /usr/local/nginx/conf ]; then
-    mkdir -p /usr/local/nginx/conf
-  fi
-  if [ -d /usr/local/nginx/conf ]; then
-    # detection routine to see if Nginx supports Dynamic modules from nginx 1.9.11+
-    if [ -f "$(which figlet)" ]; then
-        figlet -ckf standard "Check Nginx Dynamic Module Support"
-    fi
-    echo
-    echo "NGX_DYNAMICCHECK nginx_configure"
-    pwd
-    dynamicmodule_file
-  if [ "$ngver" ]; then
-    DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-$ngver/src/core/nginx.h")
-    echo "$DETECT_NGXVER"
-  else
-    DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-${NGINX_VERSION}/src/core/nginx.h")
-    echo "$DETECT_NGXVER"
-  fi
-  if [[ "$DETECT_NGXVER" -ge '1011005' && "$DYNAMIC_SUPPORT" = [yY] ]]; then
-    WITHCOMPAT_OPT=' --with-compat'
-  else
-    WITHCOMPAT_OPT=""
-  fi
-  fi # check for /usr/local/nginx/conf
+   # detection routine to see if Nginx supports Dynamic modules from nginx 1.9.11+
+   if [ -f "$(which figlet)" ]; then
+      figlet -ckf standard "Check Nginx Dynamic Module Support"
+   fi
+   echo
+   echo "NGX_DYNAMICCHECK nginx_configure"
+   pwd
+   dynamicmodule_file
+   if [ "$ngver" ]; then
+      DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-$ngver/src/core/nginx.h")
+      echo "$DETECT_NGXVER"
+   else
+      DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-${NGINX_VERSION}/src/core/nginx.h")
+      echo "$DETECT_NGXVER"
+   fi
+   if [[ "$DETECT_NGXVER" -ge '1011005' && "$DYNAMIC_SUPPORT" = [yY] ]]; then
+      WITHCOMPAT_OPT=' --with-compat'
+   else
+      WITHCOMPAT_OPT=""
+   fi
 }
 
 luaworkaroundfix() {
@@ -143,6 +122,8 @@ fi
 if [ -f "${CM_INSTALLDIR}/inc/z_custom.inc" ]; then
     source "${CM_INSTALLDIR}/inc/z_custom.inc"
 fi
+
+   [[ ! -d '/usr/local/nginx/conf' ]] && mkdir -p '/usr/local/nginx/conf'
 
 	# adjustments for OpenSSL 1.1.0
   DETECTOPENSSL_ONEZERO=$(echo $OPENSSL_VERSION  | cut -d . -f1,2)
@@ -216,26 +197,11 @@ fi
 			NGX_VEREVAL=${SET_NGINXVER}
 		fi
 
-if [[ "$GPERFTOOLS_SOURCEINSTALL" = [yY] ]]; then
-	# lsof -n | grep tcmalloc >/dev/null 2>&1; echo $?
-	GPERFOPT=" --with-google_perftools_module"
-	mkdir -p /var/tmp/tcmalloc
-	chown -R nginx:nginx /var/tmp/tcmalloc
-cat > "/usr/local/nginx/conf/gperftools.conf" <<GPF
-google_perftools_profiles /var/tmp/tcmalloc;
-GPF
-
-  GPERFINCLUDE_CHECK=$(grep '^include \/usr\/local\/nginx\/conf\/gperftools.conf;' /usr/local/nginx/conf/nginx.conf)
-
-  if [[ ! -z "$GPERFINCLUDE_CHECK" ]]; then
-    sed -i 's/^#include \/usr\/local\/nginx\/conf\/gperftools.conf;/include \/usr\/local\/nginx\/conf\/gperftools.conf;/g' /usr/local/nginx/conf/nginx.conf
-  elif [[ -z "$GPERFINCLUDE_CHECK" ]]; then
-  	sed -i 's/pcre_jit on;/pcre_jit on; \ninclude \/usr\/local\/nginx\/conf\/gperftools.conf;/g' /usr/local/nginx/conf/nginx.conf
-  fi
-else
-	GPERFOPT=""
-  sed -i 's|^include \/usr\/local\/nginx\/conf\/gperftools.conf|#include \/usr\/local\/nginx\/conf\/gperftools.conf|g' /usr/local/nginx/conf/nginx.conf
-fi
+	if [[ "$GPERFTOOLS_SOURCEINSTALL" = [yY] ]]; then
+		GPERFOPT=" --with-google_perftools_module"
+	else
+		GPERFOPT=""
+	fi
 
 if [[ "$NGINX_ZLIBNG" = [yY] && "$(uname -m)" = 'x86_64' ]]; then
 	zlibng_install
@@ -1039,13 +1005,6 @@ if [[ "$CENTOS_SEVEN" = '7' || "$CENTOS_SIX" = '6' ]]; then
 				./tplToDefine.sh ../share/status.template.html > ../src/ngx_http_vhost_traffic_status_module_html.h
 				# ./tplToDefine.sh ../share/status.compress.html > ../src/ngx_http_vhost_traffic_status_module_html.h
 				cd ../
-				# setup /vhost_status.html
-				cp -a "${DIR_TMP}/nginx-module-vts/share/status.compress.html" /usr/local/nginx/html/vhost_status.html
-				MAINURIHOST=$HN
-				NEWURI="//${MAINURIHOST}/vhost_status"
-				if [ -f /usr/local/nginx/html/vhost_status.html ]; then
-					sed -i "s|{{uri}}|$NEWURI|" /usr/local/nginx/html/vhost_status.html
-				fi
 			elif [[ -d "${DIR_TMP}/nginx-module-vts" && -d "${DIR_TMP}/nginx-module-vts/.git" ]]; then
 				rm -rf "${DIR_TMP}/nginx-module-vts"
 				cd "$DIR_TMP"
@@ -1058,13 +1017,6 @@ if [[ "$CENTOS_SEVEN" = '7' || "$CENTOS_SIX" = '6' ]]; then
 				./tplToDefine.sh ../share/status.template.html > ../src/ngx_http_vhost_traffic_status_module_html.h
 				# ./tplToDefine.sh ../share/status.compress.html > ../src/ngx_http_vhost_traffic_status_module_html.h
 				cd ../
-				# setup /vhost_status.html
-				cp -a "${DIR_TMP}/nginx-module-vts/share/status.compress.html" /usr/local/nginx/html/vhost_status.html
-				MAINURIHOST=$HN
-				NEWURI="//${MAINURIHOST}/vhost_status"
-				if [ -f /usr/local/nginx/html/vhost_status.html ]; then
-					sed -i "s|{{uri}}|$NEWURI|" /usr/local/nginx/html/vhost_status.html
-				fi
 			fi
 		else
 			VTSOPT=""
@@ -1753,11 +1705,8 @@ if [[ "$NGINX_LIBBROTLI" = [yY] ]]; then
 	if [[ "$NGINX_LIBBROTLISTATIC" = [yY] ]]; then
 		export NGX_BROTLI_STATIC_MODULE_ONLY=1
 	fi
-	sed -i 's|^ #include \/usr\/local\/nginx\/conf\/brotli_inc.conf;| include \/usr\/local\/nginx\/conf\/brotli_inc.conf;|g' /usr/local/nginx/conf/nginx.conf
 else
 	BROTLIOPT=""
-	# disable include file if exists
-	sed -i 's|^ include \/usr\/local\/nginx\/conf\/brotli_inc.conf;| #include \/usr\/local\/nginx\/conf\/brotli_inc.conf;|g' /usr/local/nginx/conf/nginx.conf
 		if [ -f /usr/local/nginx/modules/ngx_http_brotli_filter_module.so ]; then
 			rm -rf /usr/local/nginx/modules/ngx_http_brotli_filter_module.so
 		fi
@@ -1866,12 +1815,6 @@ if [[ "$ngver" && "$NGXUPGRADE_VER" = '1.9' ]] || [[ "$ngver" && "$NGXUPGRADE_VE
 		fi
 	fi
 	THREADS=' --with-threads'
-	if [ -f /usr/local/nginx/conf/redisupstream.conf ]; then
-		sed -i "s|^#include \/usr\/local\/nginx\/conf\/redisupstream.conf|include \/usr\/local\/nginx\/conf\/redisupstream.conf|" /usr/local/nginx/conf/nginx.conf
-	fi
-	if [[ -z "$(grep ' reuseport' /usr/local/nginx/conf/conf.d/virtual.conf)" ]]; then
-		sed -i "s|backlog=.*|backlog=2048 reuseport;|" /usr/local/nginx/conf/conf.d/virtual.conf
-	fi
 	# workaround for nginx 1.9 compatibility
 	# sed -i.bak 's|ngx_http_set_connection_log|ngx_set_connection_log|g' ${DIR_TMP}/lua-nginx-module-${ORESTY_LUANGINXVER}/src/ngx_http_lua_initworkerby.c
 	# sed -i.bak 's|ngx_http_set_connection_log|ngx_set_connection_log|g' ${DIR_TMP}/lua-nginx-module-${ORESTY_LUANGINXVER}/src/ngx_http_lua_timer.c
@@ -1910,42 +1853,19 @@ elif [[ -z "$ngver" && "$NGXINSTALL_VER" = '1.9' ]] || [[ -z "$ngver" && "$NGXIN
 			fi
 	fi
 	THREADS=' --with-threads'
-	if [ -f /usr/local/nginx/conf/redisupstream.conf ]; then
-		sed -i "s|^#include \/usr\/local\/nginx\/conf\/redisupstream.conf|include \/usr\/local\/nginx\/conf\/redisupstream.conf|" /usr/local/nginx/conf/nginx.conf
-	fi
-	if [[ -z "$(grep ' reuseport' /usr/local/nginx/conf/conf.d/virtual.conf)" ]]; then
-		sed -i "s|backlog=.*|backlog=2048 reuseport;|" /usr/local/nginx/conf/conf.d/virtual.conf
-	fi
 	# workaround for nginx 1.9 compatibility
 	# sed -i.bak 's|ngx_http_set_connection_log|ngx_set_connection_log|g' ${DIR_TMP}/lua-nginx-module-${ORESTY_LUANGINXVER}/src/ngx_http_lua_initworkerby.c
 	# sed -i.bak 's|ngx_http_set_connection_log|ngx_set_connection_log|g' ${DIR_TMP}/lua-nginx-module-${ORESTY_LUANGINXVER}/src/ngx_http_lua_timer.c	
 elif [[ "$ngver" && "$NGXUPGRADE_VER" = '1.8' ]]; then
 	STREAM=""
 	THREADS=' --with-threads'
-	if [ -f /usr/local/nginx/conf/redisupstream.conf ]; then
-		sed -i "s|^include \/usr\/local\/nginx\/conf\/redisupstream.conf|#include \/usr\/local\/nginx\/conf\/redisupstream.conf|" /usr/local/nginx/conf/nginx.conf
-	fi
-	if [[ "$(grep ' reuseport' /usr/local/nginx/conf/conf.d/virtual.conf)" ]]; then
-		sed -i "s| reuseport||" /usr/local/nginx/conf/conf.d/virtual.conf
-	fi
 elif [[ -z "$ngver" && "$NGXINSTALL_VER" = '1.8' ]]; then
 	STREAM=""
 	THREADS=' --with-threads'
-	if [ -f /usr/local/nginx/conf/redisupstream.conf ]; then
-		sed -i "s|^include \/usr\/local\/nginx\/conf\/redisupstream.conf|#include \/usr\/local\/nginx\/conf\/redisupstream.conf|" /usr/local/nginx/conf/nginx.conf
-	fi
-	if [[ "$(grep ' reuseport' /usr/local/nginx/conf/conf.d/virtual.conf)" ]]; then
-		sed -i "s| reuseport||" /usr/local/nginx/conf/conf.d/virtual.conf
-	fi
 else
 	STREAM=""
 	THREADS=""
-	if [ -f /usr/local/nginx/conf/redisupstream.conf ]; then
-		sed -i "s|^include \/usr\/local\/nginx\/conf\/redisupstream.conf|#include \/usr\/local\/nginx\/conf\/redisupstream.conf|" /usr/local/nginx/conf/nginx.conf
 	fi
-	if [[ "$(grep ' reuseport' /usr/local/nginx/conf/conf.d/virtual.conf)" ]]; then
-		sed -i "s| reuseport||" /usr/local/nginx/conf/conf.d/virtual.conf
-	fi	
 fi
 
 if [[ "$NGINX_STREAMGEOIP" = [yY] ]]; then
@@ -2498,12 +2418,6 @@ fi
     if [[ "$NGXMODULE_ALTORDER" = [yY] ]]; then
     	if [[ "$asknginxipv" = [yY] || "$NGINX_IPV" = [yY] ]]; then
       		pwd
-      		if [[ "$DYNAMIC_SUPPORT" = [yY] ]]; then
-      			echo
-      			echo "dynamic module directory at /usr/local/nginx/modules"
-      			ls -lah /usr/local/nginx/modules
-      			echo
-      		fi
       		echo "nginx configure options (alternate ordering):"
       		echo "./configure --with-ld-opt=\"${LRT}${JEMALLOC_LD}${PCRE_LD} -Wl,-z,relro ${LUALD_OPT}${PCRE_LDOPT}\" --with-cc-opt=\"${MTUNEOPT}-g$GCC_OPTLEVEL $FSTACKPROTECT${NGXEXTRA_LDGOLDCCOPT} --param=ssp-buffer-size=4 -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2${CLANG_CCOPT}${BROTLI_CFLAG}${PCRE_CCOPT}${NGXEXTRA_CCOPT}\" --sbin-path=/usr/local/sbin/nginx --conf-path=/usr/local/nginx/conf/nginx.conf${WITHCOMPAT_OPT}${NGINX_DEBUGOPT}${IPVSIXOPT}${DYNAMICOPT_BEGIN}${STUBSTATUSOPT}${AUTHREQOPT}${SECURELINKOPT}${FLVOPT}${MPOPT}${RTMPOPT}${WITHOPENSSL_OPTECHO}${VTSOPT}${LIBATOMICOPT}${DYNAMICOPT_MIDDLE} --with-http_gzip_static_module${BROTLIOPT}${PGSPEEDOPT}${SUBOPT}${ADDITIONOPT}${IMAGEFILTEROPT}${GEOIPOPT}${NGINX_NJSOPT}${STREAMGEOIPOPT}${STREAMREALIPOPT}${STREAM_SSLPREREADOPT}${THREADS}${STREAM}${REALIPOPT}${ACCESSKEYOPT}${HTTPCONCATOPT}${FANCYINDEXOPT}${CACHEPURGEOPT}${GPERFOPT}${WEBDAVOPT}${RUBYMODULE}${DEVELKITOPT}${SETMISCOPT}${ECHOOPT}${REDISOPT}${HTTPREDISOPT}${LUAOPT}${STICKYOPT}${UPSTREAMOPT}${MEMCOPT}${SRCCACHEOPT}${HEADERSMOREOPT}${NGXPERLOPT}${NGXXSLTOPT}${PCREJITOPT}${ZLIBNG_OPT}${ZLIBCUSTOM_OPT}${HIDELENGTHOPT} --with-http_ssl_module${SPDYOPT}${HTTPTWOOPT}${NGX_HPACK_OPT}${HTTP_PUSHOPT}${OPENSSLOPT}${LIBRESSLOPT}${MODSEC_OPT}${RDNSOPT}" | tee -a "${CENTMINLOGDIR}/nginx-configure-${DT}.log"
 			./configure --with-ld-opt="${LRT}${JEMALLOC_LD}${PCRE_LD} -Wl,-z,relro ${LUALD_OPT}${PCRE_LDOPT}" --with-cc-opt="${MTUNEOPT}-g$GCC_OPTLEVEL $FSTACKPROTECT${NGXEXTRA_LDGOLDCCOPT} --param=ssp-buffer-size=4 -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2${CLANG_CCOPT}${BROTLI_CFLAG}${PCRE_CCOPT}${NGXEXTRA_CCOPT}" --sbin-path=/usr/local/sbin/nginx --conf-path=/usr/local/nginx/conf/nginx.conf${WITHCOMPAT_OPT}${NGINX_DEBUGOPT}${IPVSIXOPT}${DYNAMICOPT_BEGIN}${STUBSTATUSOPT}${AUTHREQOPT}${SECURELINKOPT}${FLVOPT}${MPOPT}${RTMPOPT}${WITHOPENSSL_OPT}${VTSOPT}${LIBATOMICOPT}${DYNAMICOPT_MIDDLE} --with-http_gzip_static_module${BROTLIOPT}${PGSPEEDOPT}${SUBOPT}${ADDITIONOPT}${IMAGEFILTEROPT}${GEOIPOPT}${NGINX_NJSOPT}${STREAMGEOIPOPT}${STREAMREALIPOPT}${STREAM_SSLPREREADOPT}${THREADS}${STREAM}${REALIPOPT}${ACCESSKEYOPT}${HTTPCONCATOPT}${FANCYINDEXOPT}${CACHEPURGEOPT}${GPERFOPT}${WEBDAVOPT}${RUBYMODULE}${DEVELKITOPT}${SETMISCOPT}${ECHOOPT}${REDISOPT}${HTTPREDISOPT}${LUAOPT}${STICKYOPT}${UPSTREAMOPT}${MEMCOPT}${SRCCACHEOPT}${HEADERSMOREOPT}${NGXPERLOPT}${NGXXSLTOPT}${PCREJITOPT}${ZLIBNG_OPT}${ZLIBCUSTOM_OPT}${HIDELENGTHOPT} --with-http_ssl_module${SPDYOPT}${HTTPTWOOPT}${NGX_HPACK_OPT}${HTTP_PUSHOPT}${OPENSSLOPT}${LIBRESSLOPT}${MODSEC_OPT}${RDNSOPT}
@@ -2528,4 +2442,93 @@ fi
 	fi # NGXMODULE_ALTORDER
 	sar_call
 
+}
+
+ngx_setconfigfiles() {
+   if [ "$NGX_DYNAMICCHECK" ]; then
+      if [[ "$(grep 'dynamic-modules.conf' /usr/local/nginx/conf/nginx.conf)" ]]; then
+         sed -i 's|^#include \/usr\/local\/nginx\/conf\/dynamic-modules.conf;|include \/usr\/local\/nginx\/conf\/dynamic-modules.conf;|g' /usr/local/nginx/conf/nginx.conf
+      else
+         sed -i 's|^pcre_jit on;|pcre_jit on;\ninclude \/usr\/local\/nginx\/conf\/dynamic-modules.conf;\n|g' /usr/local/nginx/conf/nginx.conf
+         sed -i 's|^pcre_jit off;|pcre_jit on;\ninclude \/usr\/local\/nginx\/conf\/dynamic-modules.conf;\n|g' /usr/local/nginx/conf/nginx.conf
+      fi
+   else
+      sed -i 's|^include \/usr\/local\/nginx\/conf\/dynamic-modules.conf;|#include \/usr\/local\/nginx\/conf\/dynamic-modules.conf;|g' /usr/local/nginx/conf/nginx.conf
+   fi
+
+   if [[ "$GPERFTOOLS_SOURCEINSTALL" = [yY] ]]; then
+      cat > "/usr/local/nginx/conf/gperftools.conf" <<GPF
+google_perftools_profiles /var/tmp/tcmalloc;
+GPF
+      GPERFINCLUDE_CHECK=$(grep '^include \/usr\/local\/nginx\/conf\/gperftools.conf;' /usr/local/nginx/conf/nginx.conf)
+      if [[ "$GPERFINCLUDE_CHECK" ]]; then
+         sed -i 's/^#include \/usr\/local\/nginx\/conf\/gperftools.conf;/include \/usr\/local\/nginx\/conf\/gperftools.conf;/g' /usr/local/nginx/conf/nginx.conf
+      else
+         sed -i 's/pcre_jit on;/pcre_jit on; \ninclude \/usr\/local\/nginx\/conf\/gperftools.conf;/g' /usr/local/nginx/conf/nginx.conf
+      fi
+   else
+      sed -i 's|^include \/usr\/local\/nginx\/conf\/gperftools.conf|#include \/usr\/local\/nginx\/conf\/gperftools.conf|g' /usr/local/nginx/conf/nginx.conf
+   fi
+
+   if [[ "$NGINX_VHOSTSTATS" = [yY] && -e "${DIR_TMP}/nginx-module-vts/share/status.compress.html" ]]; then
+      cp -a "${DIR_TMP}/nginx-module-vts/share/status.compress.html" /usr/local/nginx/html/vhost_status.html
+      NEWURI="//${HN}/vhost_status"
+      sed -i "s|{{uri}}|$NEWURI|" /usr/local/nginx/html/vhost_status.html
+   fi
+
+   NGXINSTALL_VER_MINOR=$(echo "$NGINX_VERSION" | cut -d . -f2)
+   NGXUPGRADE_VER_MINOR=$(echo "$ngver" | cut -d . -f2)
+
+   if [[ "$NGXUPGRADE_VER_MINOR" -ge 9 ]] || [[ -z "$ngver" && "$NGXINSTALL_VER_MINOR" -ge 9 ]] ; then
+      if [ -f /usr/local/nginx/conf/redisupstream.conf ]; then
+         sed -i "s|^#include \/usr\/local\/nginx\/conf\/redisupstream.conf|include \/usr\/local\/nginx\/conf\/redisupstream.conf|" /usr/local/nginx/conf/nginx.conf
+      fi
+      if [[ -z "$(grep ' reuseport' /usr/local/nginx/conf/conf.d/virtual.conf)" ]]; then
+         sed -i "s|backlog=.*|backlog=2048 reuseport;|" /usr/local/nginx/conf/conf.d/virtual.conf
+      fi
+   else
+      sed -i "s|^include \/usr\/local\/nginx\/conf\/redisupstream.conf|#include \/usr\/local\/nginx\/conf\/redisupstream.conf|" /usr/local/nginx/conf/nginx.conf
+      sed -i "s| reuseport||" /usr/local/nginx/conf/conf.d/virtual.conf
+   fi
+
+   if [[ "$TCPFASTOPEN" -eq 1 ]]; then
+	   if [[ "$SUPPORT_REUSEPORT" = [yY] ]]; then
+         if [ "$(grep -w 'listen 80 default_server backlog=2048 reuseport' /usr/local/nginx/conf/conf.d/virtual.conf)" ]; then
+            sed -i 's|listen 80 default_server backlog=2048 reuseport.*|listen 80 default_server backlog=2048 reuseport fastopen=256;|' /usr/local/nginx/conf/conf.d/virtual.conf
+         elif [ "$(grep -w 'listen   80 default_server backlog=2048 reuseport' /usr/local/nginx/conf/conf.d/virtual.conf)" ]; then
+            sed -i 's|listen   80 default_server backlog=2048 reuseport.*|listen   80 default_server backlog=2048 reuseport fastopen=256;|' /usr/local/nginx/conf/conf.d/virtual.conf
+         fi
+      else
+         if [ "$(grep -w 'listen 80 default_server backlog=2048' /usr/local/nginx/conf/conf.d/virtual.conf)" ]; then
+            sed -i 's|listen 80 default_server backlog=2048.*|listen 80 default_server backlog=2048 fastopen=256;|' /usr/local/nginx/conf/conf.d/virtual.conf
+         elif [ "$(grep -w 'listen   80 default_server backlog=2048' /usr/local/nginx/conf/conf.d/virtual.conf)" ]; then
+            sed -i 's|listen   80 default_server backlog=2048.*|listen   80 default_server backlog=2048 fastopen=256;|' /usr/local/nginx/conf/conf.d/virtual.conf
+         fi
+		fi
+   fi
+
+   if [[ "$NGINX_LIBBROTLI" = [yY] ]]; then
+      cat > "/usr/local/nginx/conf/brotli_inc.conf" <<EIF
+brotli on;
+brotli_static on;
+brotli_min_length 1000;
+brotli_buffers 32 8k;
+brotli_comp_level 5;
+brotli_types text/plain text/css text/xml application/javascript application/x-javascript application/xml application/xml+rss application/ecmascript application/json image/svg+xml;
+EIF
+      BROTLI_INCLUDECHECK=$(grep '\/usr\/local\/nginx\/conf\/brotli_inc.conf' /usr/local/nginx/conf/nginx.conf)
+      if [[ "$BROTLI_INCLUDECHECK" ]]; then
+         sed -i 's|^ #include \/usr\/local\/nginx\/conf\/brotli_inc.conf;| include \/usr\/local\/nginx\/conf\/brotli_inc.conf;|g' /usr/local/nginx/conf/nginx.conf 
+      else
+			sed -i 's/http {/http { \n include \/usr\/local\/nginx\/conf\/brotli_inc.conf;/g' /usr/local/nginx/conf/nginx.conf
+      fi
+   else
+      sed -i 's|^ include \/usr\/local\/nginx\/conf\/brotli_inc.conf;| #include \/usr\/local\/nginx\/conf\/brotli_inc.conf;|g' /usr/local/nginx/conf/nginx.conf
+   fi
+
+   if [[ "$GPERFTOOLS_SOURCEINSTALL" = [yY] ]]; then
+      # lsof -n | grep tcmalloc >/dev/null 2>&1; echo $?
+      mkdir -p /var/tmp/tcmalloc
+      chown -R nginx:nginx /var/tmp/tcmalloc
+   fi
 }

@@ -341,9 +341,8 @@ fi
     #rm -rf $CUR_DIR/htdocs
     cp -R $CUR_DIR/config/nginx/* /usr/local/nginx/conf
 
-    #################################################################################
-    ngx_dynamicfunction
-    #################################################################################
+    ngx_setconfigfiles
+
     checkmapinital
 
     # setup default hostname

@@ -684,6 +684,8 @@ funct_nginxconfigure
     	echo -e "\n`date`\nSuccess: Nginx configure ok\n"
 	fi
 
+ngx_setconfigfiles
+
 # error check
 ################
 
