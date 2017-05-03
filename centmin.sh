@@ -252,6 +252,8 @@ NGINX_LENGTHHIDE='n'         # https://github.com/nulab/nginx-length-hiding-filt
 NGINX_LENGTHHIDEGIT='y'      # triggers only if NGINX_LENGTHHIDE='y'
 NGINX_CACHEPURGE='y'         # https://github.com/FRiCKLE/ngx_cache_purge/
 NGINX_ACCESSKEY='n'          #
+NGINX_ACCESSKEYVER='2.0.3'   # for Nginx version < 1.12.0
+NGINX_ACCESSKEYVER2='2.0.4'  # for Nginx version >= 1.12.0
 NGINX_HTTPCONCAT='n'         # https://github.com/alibaba/nginx-http-concat
 NGINX_THREADS='y'            # https://www.nginx.com/blog/thread-pools-boost-performance-9x/
 NGINX_STREAM='y'             # http://nginx.org/en/docs/stream/ngx_stream_core_module.html

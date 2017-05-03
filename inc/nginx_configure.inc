@@ -463,7 +463,14 @@ if [[ "$CENTOS_SEVEN" = '7' || "$CENTOS_SIX" = '6' ]]; then
   fi
 
 	if [[ "$NGINX_ACCESSKEY" = [yY] ]]; then
-		ACCESSKEYOPT=" --add-module=../nginx-accesskey-2.0.3"
+      local ngxmajorv=$(echo "${ngver:-$NGINX_VERSION}" | cut -d . -f1)
+      local ngxminorv=$(echo "${ngver:-$NGINX_VERSION}" | cut -d . -f2)
+      if [[ $ngxmajorv == 1 && $ngxminorv -lt 12 ]]; then
+		   NGX_ACCESSKEYDIR=$(tar -tzf "$DIR_TMP/nginx-accesskey-${NGINX_ACCESSKEYVER}.tar.gz" | head -1 | cut -f1 -d"/")
+      else
+         NGX_ACCESSKEYDIR=$(tar -tzf "$DIR_TMP/nginx-accesskey-${NGINX_ACCESSKEYVER2}.tar.gz" | head -1 | cut -f1 -d"/")
+      fi
+		ACCESSKEYOPT=" --add-module=../$NGX_ACCESSKEYDIR"
 	else
 		ACCESSKEYOPT=""
 	fi		
@@ -1301,7 +1308,14 @@ else
 	fi
 
 	if [[ "$NGINX_ACCESSKEY" = [yY] ]]; then
-		ACCESSKEYOPT=" --add-module=../nginx-accesskey-2.0.3"
+      local ngxmajorv=$(echo "${ngver:-$NGINX_VERSION}" | cut -d . -f1)
+      local ngxminorv=$(echo "${ngver:-$NGINX_VERSION}" | cut -d . -f2)
+      if [[ $ngxmajorv == 1 && $ngxminorv -lt 12 ]]; then
+		   NGX_ACCESSKEYDIR=$(tar -tzf "$DIR_TMP/nginx-accesskey-${NGINX_ACCESSKEYVER}.tar.gz" | head -1 | cut -f1 -d"/")
+      else
+         NGX_ACCESSKEYDIR=$(tar -tzf "$DIR_TMP/nginx-accesskey-${NGINX_ACCESSKEYVER2}.tar.gz" | head -1 | cut -f1 -d"/")
+      fi
+		ACCESSKEYOPT=" --add-module=../$NGX_ACCESSKEYDIR"
 	else
 		ACCESSKEYOPT=""
 	fi		

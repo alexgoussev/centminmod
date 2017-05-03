@@ -345,6 +345,15 @@ ngxmoduletarball() {
    filetarball "$NGX_CACHEPURGE" "$NGX_CACHEPURGEFILE"
 
    echo 'Download nginx-accesskey Nginx module:'
+   local majorver=$(echo "${ngver:-$NGINX_VERSION}" | cut -d . -f1)
+   local minorver=$(echo "${ngver:-$NGINX_VERSION}" | cut -d . -f2)
+   if [[ $majorver == 1 && $minorver -lt 12 ]]; then
+      NGX_ACCESSKEYVER=$NGINX_ACCESSKEYVER
+   else
+      NGX_ACCESSKEYVER=$NGINX_ACCESSKEYVER2
+   fi
+   NGX_ACCESSKEYLINKFILE="nginx-accesskey-${NGX_ACCESSKEYVER}.tar.gz"
+   NGX_ACCESSKEYLINK="https://github.com/Martchus/nginx-accesskey/archive/v${NGX_ACCESSKEYVER}.tar.gz"
    filetarball "$NGX_ACCESSKEYLINK" "$NGX_ACCESSKEYLINKFILE"
 
    echo 'Download nginx-http-concat Nginx module:'

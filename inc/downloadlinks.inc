@@ -206,9 +206,6 @@ NGX_FANCYINDEXLINK="https://github.com/aperezdc/ngx-fancyindex/archive/v${NGINX_
 NGX_CACHEPURGEFILE="ngx_cache_purge-${NGINX_CACHEPURGEVER}.tar.gz"
 NGX_CACHEPURGE="${LOCALCENTMINMOD_MIRROR}/centminmodparts/nginx/modules/${NGX_CACHEPURGEFILE}"
 
-NGX_ACCESSKEYLINKFILE="Nginx-accesskey-2.0.3.tar.gz"
-NGX_ACCESSKEYLINK="${LOCALCENTMINMOD_MIRROR}/centminmodparts/nginx/modules/${NGX_ACCESSKEYLINKFILE}"
-
 # wget renamed
 NGX_CONCATLINKFILE="nginx-http-concat-master.tar.gz"
 NGX_CONCATLINK='https://github.com/alibaba/nginx-http-concat/archive/master.tar.gz'
