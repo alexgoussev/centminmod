@@ -95,6 +95,8 @@ if [[ "$NGINX_INSTALL" = [yY] ]]; then
     cecho "* Installing nginx" $boldgreen
     echo "*************************************************"
 
+    DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-${ngver:-$NGINX_VERSION}/src/core/nginx.h")
+
     # echo "\${CUR_DIR} & \${CM_INSTALLDIR}"
     # echo ${CUR_DIR}
     # echo ${CM_INSTALLDIR}        

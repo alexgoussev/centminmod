@@ -67,7 +67,6 @@ ngx_dynamicfunction() {
    echo "NGX_DYNAMICCHECK nginx_configure"
    pwd
    dynamicmodule_file
-   DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-${ngver:-$NGINX_VERSION}/src/core/nginx.h")
    echo "$DETECT_NGXVER"
 	echo
    if [[ "$DETECT_NGXVER" -ge '1011005' && "$DYNAMIC_SUPPORT" = [yY] ]]; then
@@ -143,6 +142,8 @@ fi
 	# https://github.com/openresty/lua-nginx-module/commit/b1a326eedf47b77e98b378fae1160e5340b75006
 	#luaworkaroundfix
 
+   DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-${ngver:-$NGINX_VERSION}/src/core/nginx.h")
+
 	#################################################################################
 	ngx_dynamicfunction
 	#################################################################################
@@ -181,18 +182,6 @@ fi
 		PCRE_LDOPT=""
 	fi
 
-# CUR_NGINXVER=$(nginx -v 2>&1 | awk -F '\\/' '{print $2}' |sed -e 's|\.|0|g' | head -n1)
-# CUR_NGINXUPGRADEVER=$(echo $ngver |sed -e 's|\.|0|g' | head -n1)
-# SET_NGINXVER=$(echo ${NGINX_VERSION} |sed -e 's|\.|0|g' | head -n1)
-
-		# assign NGX_VEREVAL nginx version based on if it's an initial
-		# centmin mod fresh install or a nginx upgrade run
-		if [[ "$INITIALINSTALL" != [yY] ]]; then
-			NGX_VEREVAL=${CUR_NGINXUPGRADEVER}
-		else
-			NGX_VEREVAL=${SET_NGINXVER}
-		fi
-
 	if [[ "$GPERFTOOLS_SOURCEINSTALL" = [yY] ]]; then
 		GPERFOPT=" --with-google_perftools_module"
 	else
@@ -208,13 +197,6 @@ fi
 
 
 if [[ "$CENTOS_SEVEN" = '7' || "$CENTOS_SIX" = '6' ]]; then
-
-  if [ "$ngver" ]; then
-    DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-$ngver/src/core/nginx.h")
-    echo "$DETECT_NGXVER"
-  else
-    DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-${NGINX_VERSION}/src/core/nginx.h")
-    echo "$DETECT_NGXVER"
   fi
 
   if [[ "$NGINX_HPACK" = [yY] && "$DETECT_NGXVER" -ge '1013001' ]]; then
@@ -223,8 +205,6 @@ if [[ "$CENTOS_SEVEN" = '7' || "$CENTOS_SIX" = '6' ]]; then
     NGX_HPACK_OPT=' --with-http_v2_hpack_enc'
   else
     NGX_HPACK_OPT=""
-  fi
-
   if [[ "$NGINX_HTTPPUSH" = [yY] ]]; then
     NGINX_HTTP2='y'
     ngx_httppush_patch
@@ -248,7 +228,7 @@ if [[ "$CENTOS_SEVEN" = '7' || "$CENTOS_SIX" = '6' ]]; then
 
 	if [[ "$NGINX_HTTP2" = [yY] ]]; then	
 		# only apply Nginx HTTP/2 if Nginx version is >= 1.9.3 and <1.9.5 OR >= 1.9.5
-		if [[ "$NGX_VEREVAL" -ge '10903' && "$NGX_VEREVAL" -lt '10905' ]] || [[ "$NGX_VEREVAL" -ge '10905' ]]; then
+		if [[ "$DETECT_NGXVER" -ge '1009003' ]]; then
 			if [[ "$NGINX_SPDYPATCHED" = [yY] ]]; then
 				NGINX_SPDY=y
 				HTTPTWOOPT=' --with-http_spdy_module --with-http_v2_module'
@@ -259,7 +239,7 @@ if [[ "$CENTOS_SEVEN" = '7' || "$CENTOS_SIX" = '6' ]]; then
 		fi
 	else
 		HTTPTWOOPT=""
-		if [[ "$NGX_VEREVAL" -lt '10903' ]]; then
+		if [[ "$DETECT_NGXVER" -lt '1009003' ]]; then
 			NGINX_SPDY=y
 		fi
 	fi
@@ -1161,7 +1141,7 @@ else
 
 	if [[ "$NGINX_HTTP2" = [yY] ]]; then	
 		# only apply Nginx HTTP/2 if Nginx version is >= 1.9.3 and <1.9.5 OR >= 1.9.5
-		if [[ "$NGX_VEREVAL" -ge '10903' && "$NGX_VEREVAL" -lt '10905' ]] || [[ "$NGX_VEREVAL" -ge '10905' ]]; then
+		if [[ "$DETECT_NGXVER" -ge '1009003' ]]; then
 			if [[ "$NGINX_SPDYPATCHED" = [yY] ]]; then
 				NGINX_SPDY=y
 				HTTPTWOOPT=' --with-http_spdy_module --with-http_v2_module'
@@ -1172,7 +1152,7 @@ else
 		fi
 	else
 		HTTPTWOOPT=""
-		if [[ "$NGX_VEREVAL" -lt '10903' ]]; then
+		if [[ "$DETECT_NGXVER" -lt '1009003' ]]; then
 			NGINX_SPDY=y
 		fi		
 	fi
@@ -2013,7 +1993,7 @@ else
 fi
 
 if [[ "$NGINX_THREADS" = [yY] ]]; then
-	if [[ "$NGX_VEREVAL" -ge '10800' ]]; then
+	if [[ "$DETECT_NGXVER" -ge '1008000' ]]; then
 		THREADS=' --with-threads'
 	else
 		THREADS=""

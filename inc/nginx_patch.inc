@@ -95,14 +95,7 @@ ngx_cachepurge_patch() {
 }
 
 luanginx_patch() {
-  if [ "$ngver" ]; then
-    DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-$ngver/src/core/nginx.h")
-    echo "$DETECT_NGXVER"
-  else
-    DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-${NGINX_VERSION}/src/core/nginx.h")
-    echo "$DETECT_NGXVER"
-  fi
-  if [[ "$ORESTY_LUANGINX" = [yY] && "$DETECT_NGXVER" -ge '1011011' && "$ORESTY_LUANGINXVER" = '0.10.7' ]] || [[ "$ORESTY_LUANGINX" = [yY] && "$DETECT_NGXVER" -ge '1011011' && "$ORESTY_LUANGINXVER" = '0.10.8' ]]; then
+  if [[ "$ORESTY_LUANGINX" = [yY] && "$DETECT_NGXVER" -ge '1011011' ]] && [[ "$ORESTY_LUANGINXVER" = '0.10.7' || "$ORESTY_LUANGINXVER" = '0.10.8' ]]; then
     NGX_LUANGINXDIR=$(tar -tzf "$DIR_TMP/${NGX_LUANGINXLINKFILE}" | head -1 | cut -f1 -d"/")
     if [ -d "${DIR_TMP}/${NGX_LUANGINXDIR}/src" ]; then
       pushd "${DIR_TMP}/${NGX_LUANGINXDIR}/src"
@@ -135,13 +128,6 @@ luanginx_patch() {
 }
 
 echonginx_patch() {
-  if [ "$ngver" ]; then
-    DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-$ngver/src/core/nginx.h")
-    echo "$DETECT_NGXVER"
-  else
-    DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-${NGINX_VERSION}/src/core/nginx.h")
-    echo "$DETECT_NGXVER"
-  fi
   if [[ "$NGINX_OPENRESTY" = [yY] && "$DETECT_NGXVER" -ge '1011011' && "$ORESTY_ECHOVER" = '0.60' ]]; then
     ECHODIR=$(tar -tzf "$DIR_TMP/${NGX_ECHOLINKFILE}" | head -1 | cut -f1 -d"/")
     if [ -d "${DIR_TMP}/${ECHODIR}/src" ]; then
@@ -157,13 +143,6 @@ echonginx_patch() {
 }
 
 ngxopenresty_patch() {
-  if [ "$ngver" ]; then
-    DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-$ngver/src/core/nginx.h")
-    echo "$DETECT_NGXVER"
-  else
-    DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-${NGINX_VERSION}/src/core/nginx.h")
-    echo "$DETECT_NGXVER"
-  fi
   # apply patches for nginx => 1.11.6
   if [[ "$NGINX_OPENRESTY" = [yY] && "$DETECT_NGXVER" -ge '1011006' ]]; then
     ORESTY_REDISVERPARSED=$(echo $ORESTY_REDISVER | sed -e 's|\0.||' -e 's|rc1||' -e 's|rc2||' -e 's|rc3||' -e 's|rc4||')
@@ -201,11 +180,6 @@ patchnginx() {
   DETECTOPENSSL_ONEZERO=$(echo $OPENSSL_VERSION  | cut -d . -f1,2)
   # detect nginx <=1.11.3 or => 1.11.0 as 1.11.4+ has fix for openssl 1.1 so no patching needed
   # http://hg.nginx.org/nginx/rev/1891b2892b68
-  if [ "$ngver" ]; then
-    DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-$ngver/src/core/nginx.h")
-  else
-    DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-${NGINX_VERSION}/src/core/nginx.h")
-  fi
   if [[ "$DETECTOPENSSL_ONEZERO" = '1.1' ]] && [[ "$DETECT_NGXVER" -le '1011003' && "$DETECT_NGXVER" -ge '1011000' ]]; then
     if [[ -f "$CUR_DIR/patches/nginx/openssl-110pre6.patch" && -f "$CUR_DIR/patches/nginx/openssl-110ticket.patch" ]]; then
       if [ -f "$(which figlet)" ]; then
@@ -236,15 +210,8 @@ patchnginx() {
   fi
 
 	if [[ "$NGINX_HTTP2" = [yY] ]]; then
-		# assign NGX_VEREVAL nginx version based on if it's an initial
-		# centmin mod fresh install or a nginx upgrade run
-		if [[ "$INITIALINSTALL" != [yY] ]]; then
-			NGX_VEREVAL=${CUR_NGINXUPGRADEVER}
-		else
-			NGX_VEREVAL=${SET_NGINXVER}
-		fi
 		# only apply Nginx HTTP/2 patch if Nginx version is >= 1.9.3 and <1.9.5
-		if [[ "$NGX_VEREVAL" -ge '10903' && "$NGX_VEREVAL" -lt '10905' ]]; then
+		if [[ "$DETECT_NGXVER" -ge '1009003' && "$DETECT_NGXVER" -lt '1009005' ]]; then
 			NGINX_SPDY=n
 			# http/2 patch
 			echo
@@ -271,6 +238,8 @@ patchnginx() {
      echo "Cloudflare Nginx HTTP/2 + SPDY patch"
      echo "https://github.com/felixbuenemann/sslconfig/blob/updated-nginx-1.9.15-spdy-patch/patches/nginx_1_9_15_http2_spdy.patch"
      echo  "######################################################################"
+     
+     
      NGINXSPDYPATCHED_NAME='nginx_1_9_15_http2_spdy.patch'
      rm -rf "${NGINXSPDYPATCHED_NAME}"
      NGINXTLSPATCHLINK="https://raw.githubusercontent.com/felixbuenemann/sslconfig/updated-nginx-1.9.15-spdy-patch/patches/${NGINXSPDYPATCHED_NAME}"
@@ -299,11 +268,6 @@ patchnginx() {
      echo "Cloudflare Nginx Dynamic TLS patch"
      echo "https://github.com/cloudflare/sslconfig/raw/master/patches/nginx__dynamic_tls_records.patch"
      echo "######################################################################"
-     if [ "$ngver" ]; then
-       DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-$ngver/src/core/nginx.h")
-     else
-       DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-${NGINX_VERSION}/src/core/nginx.h")
-     fi
      if [[ "$DETECT_NGXVER" -le '1011004' && "$DETECT_NGXVER" -ge '1011000' ]]; then
       NGINXTLSPATCH_NAME='nginx__dynamic_tls_records.patch'
      elif [[ "$DETECT_NGXVER" -ge '1011005' ]]; then
