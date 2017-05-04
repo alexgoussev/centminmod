@@ -1,21 +1,18 @@
 #!/bin/sh
 export PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin"
-set -o pipefail
 #####################################################
 EMAIL=''          # Server notification email address enter only 1 address
 PUSHOVER_EMAIL='' # Signup pushover.net push email notifications to mobile & tablets
 ZONEINFO=Etc/UTC  # Set Timezone
-NGINX_IPV='n'     # option deprecated from 1.11.5+ IPV6 support
 USEEDITOR='nano' # choice between nano or vim text editors for cmd shortcuts
 
 CUSTOMSERVERNAME='y'
 CUSTOMSERVERSTRING='nginx centminmod'
 PHPFPMCONFDIR='/usr/local/nginx/conf/phpfpmd'
 
-UNATTENDED='y' # please leave at 'y' for best compatibility as at .07 release
-CMVERSION_CHECK='n'
+TESTEDCENTOSVER='7.9'
+
 #####################################################
-DT=$(date +"%d%m%y-%H%M%S")
 # for github support
 branchname='123.09beta01'
 SCRIPT_MAJORVER='1.2.3'
@@ -39,32 +36,8 @@ DISCLAIMER='This software is provided "as is" in the hope that it will be useful
 # PLEASE MODIFY VALUES BELOW THIS LINE ++++++++++++++++++++++++++++++++++++++
 # Note: Please enter y for yes or n for no.
 #####################################################
-shopt -s expand_aliases
-for g in "" e f; do
-    alias ${g}grep="LC_ALL=C ${g}grep"  # speed-up grep, egrep, fgrep
-done
-#####################################################
-HN=$(uname -n)
-# Pre-Checks to prevent screw ups
-DIR_TMP='/svr-setup'
-SCRIPT_DIR=$(readlink -f $(dirname ${BASH_SOURCE[0]}))
 
-source "inc/memcheck.inc"
-TMPFSLIMIT=2900000
-if [ ! -d "$DIR_TMP" ]; then
-        if [[ "$TOTALMEM" -ge "$TMPFSLIMIT" ]]; then
-            TMPFSENABLED=1
-            RAMDISKTMPFS='y'
-            echo "setting up $DIR_TMP on tmpfs ramdisk for initial install"
-            mkdir -p "$DIR_TMP"
-            chmod 0750 "$DIR_TMP"
-            mount -t tmpfs -o size=2200M,mode=0755 tmpfs "$DIR_TMP"
-            df -hT
-        else
-            mkdir -p "$DIR_TMP"
-            chmod 0750 "$DIR_TMP"
-        fi
-fi
+# Pre-Checks to prevent screw ups
 
 if [[ -z "$(cat /etc/resolv.conf)" ]]; then
 echo ""
@@ -109,104 +82,7 @@ if [ ! -f /usr/bin/tee ]; then
 yum -y -q install coreutils
 fi
 
-TESTEDCENTOSVER='7.9'
-CENTOSVER=$(awk '{ print $3 }' /etc/redhat-release)
-
-if [ "$CENTOSVER" == 'release' ]; then
-    CENTOSVER=$(awk '{ print $4 }' /etc/redhat-release | cut -d . -f1,2)
-    if [[ "$(cat /etc/redhat-release | awk '{ print $4 }' | cut -d . -f1)" = '7' ]]; then
-        CENTOS_SEVEN='7'
-    fi
-fi
-
-if [[ "$(cat /etc/redhat-release | awk '{ print $3 }' | cut -d . -f1)" = '6' ]]; then
-    CENTOS_SIX='6'
-fi
-
-if [ "$CENTOSVER" == 'Enterprise' ]; then
-    CENTOSVER=$(cat /etc/redhat-release | awk '{ print $7 }')
-    OLS='y'
-fi
-
-if [[ -f /etc/system-release && "$(awk '{print $1,$2,$3}' /etc/system-release)" = 'Amazon Linux AMI' ]]; then
-    CENTOS_SIX='6'
-fi
-
-source "inc/centos_seven.inc"
-seven_function
-
-cmservice() {
-        servicename=$1
-        action=$2
-        if [[ "$CENTOS_SEVEN" != '7' || "${servicename}" = 'php-fpm' || "${servicename}" = 'nginx' || "${servicename}" = 'memcached' || "${servicename}" = 'nsd' || "${servicename}" = 'csf' || "${servicename}" = 'lfd' ]]; then
-        echo "service ${servicename} $action"
-        if [[ "$CMSDEBUG" = [nN] ]]; then
-                service "${servicename}" "$action"
-        fi
-        else
-        echo "systemctl $action ${servicename}.service"
-        if [[ "$CMSDEBUG" = [nN] ]]; then
-                systemctl "$action" "${servicename}.service"
-        fi
-        fi
-}
-
-cmchkconfig() {
-        servicename=$1
-        status=$2
-        if [[ "$CENTOS_SEVEN" != '7' || "${servicename}" = 'php-fpm' || "${servicename}" = 'nginx' || "${servicename}" = 'memcached' || "${servicename}" = 'nsd' || "${servicename}" = 'csf' || "${servicename}" = 'lfd' ]]; then
-        echo "chkconfig ${servicename} $status"
-        if [[ "$CMSDEBUG" = [nN] ]]; then
-                chkconfig "${servicename}" "$status"
-        fi
-        else
-                if [ "$status" = 'on' ]; then
-                        status=enable
-                fi
-                if [ "$status" = 'off' ]; then
-                        status=disable
-                fi
-        echo "systemctl $status ${servicename}.service"
-        if [[ "$CMSDEBUG" = [nN] ]]; then
-                systemctl "$status" "${servicename}.service"
-        fi
-        fi
-}
-
-if [ -f /proc/user_beancounters ]; then
-    # CPUS='1'
-    # MAKETHREADS=" -j$CPUS"
-    # speed up make
-    CPUS=$(grep -c "processor" /proc/cpuinfo)
-    if [[ "$CPUS" -gt '8' ]]; then
-        CPUS=$(echo $(($CPUS+2)))
-    else
-        CPUS=$(echo $(($CPUS+1)))
-    fi
-    MAKETHREADS=" -j$CPUS"
-else
-    # speed up make
-    CPUS=$(grep -c "processor" /proc/cpuinfo)
-    if [[ "$CPUS" -gt '8' ]]; then
-        CPUS=$(echo $(($CPUS+4)))
-    elif [[ "$CPUS" -eq '8' ]]; then
-        CPUS=$(echo $(($CPUS+2)))
-    else
-        CPUS=$(echo $(($CPUS+1)))
-    fi
-    MAKETHREADS=" -j$CPUS"
-fi
-
-# configure .ini directory
-CONFIGSCANBASE='/etc/centminmod'
-CONFIGSCANDIR="${CONFIGSCANBASE}/php.d"
-
-if [ ! -d "$CONFIGSCANBASE" ]; then
-	mkdir -p "$CONFIGSCANBASE"
-fi
-
 if [ ! -d "$CONFIGSCANDIR" ]; then
-	mkdir -p "$CONFIGSCANDIR"
 	if [ -d /root/centminmod/php.d/ ]; then
     	cp -a /root/centminmod/php.d/* "${CONFIGSCANDIR}/"
     fi
@@ -578,8 +454,6 @@ ZOPCACHE_OVERRIDE='n'           # =y will override PHP 5.5, 5.6, 7.0 inbuilt Zen
 PYTHON_VERSION='2.7.10'       # Use this version of Python
 SIEGE_VERSION='4.0.2'
 
-CURL_TIMEOUTS=' --max-time 5 --connect-timeout 5'
-WGETOPT='-cnv --no-dns-cache -4 --no-check-certificate'
 AXEL_VER='2.6'               # Axel source compile version https://github.com/eribertomota/axel/releases
 ###############################################################
 # experimental Intel compiled optimisations 
@@ -648,29 +522,6 @@ PHP_MYSQLSOCKPATH='/var/lib/mysql'
 LETSENCRYPT_DETECT='n'
 ###############################################################
 
-MACHINE_TYPE=$(uname -m) # Used to detect if OS is 64bit or not.
-
-if [ "${ARCH_OVERRIDE}" ]; then
-  ARCH=${ARCH_OVERRIDE}
-else
-  if [ "${MACHINE_TYPE}" == 'x86_64' ]; then
-      ARCH='x86_64'
-      MDB_ARCH='amd64'
-  else
-      ARCH='i386'
-  fi
-fi
-
-# ensure if ORESTY_LUANGINX is enabled, that the other required
-# Openresty modules are enabled if folks forget to enable them
-if [[ "$ORESTY_LUANGINX" = [yY] ]]; then
-    NGINX_OPENRESTY='y'
-fi
-
-if [[ "$CENTOS_SEVEN" = '7' ]]; then
-  AXEL_VER='2.12'
-fi
-
 # ensure clang alternative to gcc compiler is used only for 64bit OS
 # if [[ "$(uname -m)" != 'x86_64' ]]; then
 #     CLANG='n'
@@ -681,27 +532,53 @@ if [[ "$1" = 'install' ]]; then
   export INITIALINSTALL='y'
 fi
 
-CUR_DIR=$SCRIPT_DIR # Get current directory.
-CM_INSTALLDIR=$CUR_DIR
-
 if [ -f "${CM_INSTALLDIR}/inc/custom_config.inc" ]; then
-   source "inc/custom_config.inc"
    if [ -d "${CENTMINLOGDIR}" ]; then
       cat "inc/custom_config.inc" > "${CENTMINLOGDIR}/inc-custom-config-settings_${DT}.log"
    fi
 fi
 if [ -f "${CONFIGSCANBASE}/custom_config.inc" ]; then
    # default is at /etc/centminmod/custom_config.inc
-   source "${CONFIGSCANBASE}/custom_config.inc"
    if [ -d "${CENTMINLOGDIR}" ]; then
       cat "${CONFIGSCANBASE}/custom_config.inc" > "${CENTMINLOGDIR}/etc-centminmod-custom-config-settings_${DT}.log"
    fi
 fi
 if [ -f "${CM_INSTALLDIR}/inc/z_custom.inc" ]; then
-   source "${CM_INSTALLDIR}/inc/z_custom.inc"
    if [ -d "${CENTMINLOGDIR}" ]; then
       cat "${CM_INSTALLDIR}/inc/z_custom.inc" > "${CENTMINLOGDIR}/inc-zcustom-config-settings_${DT}.log"
    fi
+fi
+
+source "./inc/init.inc"
+
+source "./inc/centos_seven.inc"
+seven_function
+
+source "./inc/memcheck.inc"
+TMPFSLIMIT=2900000
+if [ ! -d "$DIR_TMP" ]; then
+   if [[ "$TOTALMEM" -ge "$TMPFSLIMIT" ]]; then
+      TMPFSENABLED=1
+      RAMDISKTMPFS='y'
+      echo "setting up $DIR_TMP on tmpfs ramdisk for initial install"
+      mkdir -p "$DIR_TMP"
+      chmod 0750 "$DIR_TMP"
+      mount -t tmpfs -o size=2200M,mode=0755 tmpfs "$DIR_TMP"
+      df -hT
+   else
+      mkdir -p "$DIR_TMP"
+      chmod 0750 "$DIR_TMP"
+   fi
+fi
+
+# ensure if ORESTY_LUANGINX is enabled, that the other required
+# Openresty modules are enabled if folks forget to enable them
+if [[ "$ORESTY_LUANGINX" = [yY] ]]; then
+    NGINX_OPENRESTY='y'
+fi
+
+if [[ "$CENTOS_SEVEN" = '7' ]]; then
+  AXEL_VER='2.12'
 fi
 
 # source "inc/mainmenu.inc"
@@ -821,11 +698,9 @@ source "inc/zlib.inc"
 source "inc/updater_submenu.inc"
 source "inc/centminfinish.inc"
 
-centminlog
 checkcentosver
 mysqltmpdir
 
-# echo $1
 if [[ "$1" = 'install' ]]; then
   cpcheck initialinstall
 else
@@ -862,19 +737,11 @@ fi
 
 ###############################################################
 # The default is stable, you can change this to development if you wish
-#ARCH_OVERRIDE='i386'
-# Uncomment the above line if you are running a 32bit Paravirtulized Xen VPS
-# on a 64bit host node.
 
 # YOU SHOULD NOT NEED TO MODIFY ANYTHING BELOW THIS LINE  +++++++++++++++++++
 # JUST RUN chmod +x ./centmin.sh && ./centmin.sh
 #
 ###############################################################
-KEYPRESS_PARAM='-s -n1 -p'   # Read a keypress without hitting ENTER.
-		# -s means do not echo input.
-		# -n means accept only N characters of input.
-		# -p means echo the following prompt before reading input
-ASKCMD="read $KEYPRESS_PARAM "
 # MACHINE_TYPE=`uname -m` # Used to detect if OS is 64bit or not.
 
 if [[ "$(uname -m)" = 'x86_64' ]]; then
@@ -890,132 +757,22 @@ EOF
   fi
 fi
 
-if [ ! -f /usr/bin/sar ]; then
-  time $YUMDNFBIN -y -q install sysstat${DISABLEREPO_DNF}
-  if [[ "$(uname -m)" = 'x86_64' ]]; then
-    SARCALL='/usr/lib64/sa/sa1'
-  else
-    SARCALL='/usr/lib/sa/sa1'
-  fi
-  if [[ "$CENTOS_SEVEN" != '7' ]]; then
-    sed -i 's|10|5|g' /etc/cron.d/sysstat
-    service sysstat restart
-    chkconfig sysstat on
-  else
-    sed -i 's|10|5|g' /etc/cron.d/sysstat
-    systemctl restart sysstat.service
-    systemctl enable sysstat.service
-  fi
+if [ "$CENTOS_SEVEN" != 7 ]; then
+   sed -i 's|10|5|g' /etc/cron.d/sysstat
+   service sysstat restart
+   chkconfig sysstat on
 else
-  if [[ "$(uname -m)" = 'x86_64' ]]; then
-    SARCALL='/usr/lib64/sa/sa1'
-  else
-    SARCALL='/usr/lib/sa/sa1'
-  fi
-  if [[ "$CENTOS_SEVEN" != '7' ]]; then
-    sed -i 's|10|5|g' /etc/cron.d/sysstat
-    service sysstat restart
-    chkconfig sysstat on
-  else
-    sed -i 's|10|5|g' /etc/cron.d/sysstat
-    systemctl restart sysstat.service
-    systemctl enable sysstat.service
-  fi
+   sed -i 's|10|5|g' /etc/cron.d/sysstat
+   systemctl restart sysstat.service
+   systemctl enable sysstat.service
 fi
 
 # function checks if persistent config file has low mem variable enabled
 # LOWMEM_INSTALL='y'
 checkfor_lowmem
+
 ###############################################################
 # FUNCTIONS
-
-WGETRETRY=''
-
-download_cmd() {
-   if [[ "$CENTOS_SEVEN" == 7 || "$CENTOS_SIX" == 6 ]]; then
-      DOWNLOADAPP='axel'
-      local proto=${1%%://*}
-      if [[ "$proto" == 'https' ]]; then
-         if [[ "$CENTOS_SIX" == 6 ]]; then
-            echo "CentOS 6 Axel fallback to wget for HTTPS download"
-            DOWNLOADAPP="wget ${WGETOPT} --progress=bar --tries=3"
-         elif [[ "$(curl -Isv $1 2>&1 | egrep 'ECDSA')" ]]; then
-            # axel doesn't natively support ECC 256bit ssl certs with ECDSA ciphers due to CentOS system OpenSSL 1.0.2e
-            echo "ECDSA SSL Cipher BASED HTTPS detected, switching from axel to wget"
-            DOWNLOADAPP="wget ${WGETOPT} --progress=bar --tries=3"
-         fi
-      fi
-   else
-      DOWNLOADAPP="wget ${WGETOPT} --progress=bar --tries=3"
-   fi
-   
-   local addopt=''
-   if [ -n "$2" ]; then
-      if [[ "$DOWNLOADAPP" == 'axel' ]]; then
-         addopt="-o $2"
-      else
-         addopt="-O $2"
-      fi
-   fi
-
-   $DOWNLOADAPP $1 $addopt
-}
-
-# if [ "${ARCH_OVERRIDE}" != '' ]
-# then
-#     ARCH=${ARCH_OVERRIDE}
-# else
-#     if [ ${MACHINE_TYPE} == 'x86_64' ];
-#     then
-#         ARCH='x86_64'
-#         MDB_ARCH='amd64'
-#     else
-#         ARCH='i386'
-#     fi
-# fi
-
-ASK () {
-keystroke=''
-while [[ "$keystroke" != [yYnN] ]]
-do
-    $ASKCMD "$1" keystroke
-    echo "$keystroke";
-done
-
-key=$(echo $keystroke)
-}
-
-# Setup Colours
-black='\E[30;40m'
-red='\E[31;40m'
-green='\E[32;40m'
-yellow='\E[33;40m'
-blue='\E[34;40m'
-magenta='\E[35;40m'
-cyan='\E[36;40m'
-white='\E[37;40m'
-
-boldblack='\E[1;30;40m'
-boldred='\E[1;31;40m'
-boldgreen='\E[1;32;40m'
-boldyellow='\E[1;33;40m'
-boldblue='\E[1;34;40m'
-boldmagenta='\E[1;35;40m'
-boldcyan='\E[1;36;40m'
-boldwhite='\E[1;37;40m'
-
-Reset="tput sgr0"      #  Reset text attributes to normal
-                       #+ without clearing screen.
-
-cecho ()                     # Coloured-echo.
-                             # Argument $1 = message
-                             # Argument $2 = color
-{
-message=$1
-color=$2
-echo -e "$color$message" ; $Reset
-return
-}
 
 ###
 unsetramdisk() {
@@ -1996,6 +1753,83 @@ function cleanup_msg {
 # http://linuxcommand.org/wss0160.php
 trap cleanup_msg SIGHUP SIGINT SIGTERM
 
+
+centmininitialinstall() {
+   starttime=$(TZ=UTC date +%s.%N)
+   INITIALINSTALL='y'
+   export INITIALINSTALL='y'
+
+   # skip cache update check for first time install YUM runs
+   # CACHESKIP=' -C'
+   CACHESKIP=""
+
+   lowmemcheck initialinstall
+   centminlog
+   diskalert
+
+   {
+      CHECKCENTMINMODINSTALL=$(ls /etc/init.d | grep -E '(csf|lfd|nginx|php-fpm|^nsd)')
+      if [ ! -z "$CHECKCENTMINMODINSTALL" ]; then
+         echo ""
+         echo "Centmin Mod previous installation detected. "
+         echo ""
+         echo "If you are upgrading a server which already previously had Centmin Mod installed"
+         echo "you DO NOT need to run option #1, instead run option #4 & then #5 for upgrading"
+         echo "Nginx web server and upgrading PHP."
+         echo ""
+         echo "exiting script"
+         exit
+      fi
+   
+      dlstarttime=$(TZ=UTC date +%s.%N)
+      {    
+         alldownloads
+      } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_downloadtimes_${DT}.log"
+      ERR=$?; [ "$ERR" != 0 ] && exit $ERR
+
+      dlendtime=$(TZ=UTC date +%s.%N)
+      DOWNLOADTIME=$(echo "scale=2;$dlendtime - $dlstarttime"|bc )
+      echo "" >> "${CENTMINLOGDIR}/centminmod_downloadtimes_${DT}.log"
+      echo "Total YUM + Source Download Time: $DOWNLOADTIME seconds" >> "${CENTMINLOGDIR}/centminmod_downloadtimes_${DT}.log"
+      ls -lah "${CENTMINLOGDIR}/centminmod_downloadtimes_${DT}.log"
+
+      funct_centmininstall
+
+      # setup command shortcut aliases 
+      # given the known download location
+      # updated method for cmdir and centmin shorcuts
+      sed -i '/cmdir=/d' /root/.bashrc
+      sed -i '/centmin=/d' /root/.bashrc
+      rm -rf /usr/bin/cmdir
+      alias cmdir="pushd ${SCRIPT_DIR}"
+      echo "alias cmdir='pushd ${SCRIPT_DIR}'" >> /root/.bashrc
+      cat > "/usr/bin/centmin" << EOF
+#!/bin/bash
+pushd "$SCRIPT_DIR"; bash centmin.sh
+EOF
+      chmod 0700 /usr/bin/centmin
+
+      unsetramdisk
+
+      echo "$SCRIPT_VERSION" > /etc/centminmod-release
+      #echo "$SCRIPT_VERSION #`date`" >> /etc/centminmod-versionlog
+   } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_install.log"
+   ERR=$?; [ "$ERR" != 0 ] && { checklogdetails; exit $ERR; }
+
+   if [ "$CCACHEINSTALL" == 'y' ]; then
+      # check if ccache installed first
+      if [ -f /usr/bin/ccache ]; then
+         { echo ""; source ~/.bashrc; echo "ccache stats:"; ccache -s; echo "";
+         } 2>&1 | tee -a "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_install.log"
+      fi
+   fi
+   
+   endtime=$(TZ=UTC date +%s.%N)
+   INSTALLTIME=$(echo "scale=2;$endtime - $starttime"|bc )
+   echo "" >> "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_install.log"
+   echo "Total Centmin Mod Install Time: $INSTALLTIME seconds" >> "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_install.log"
+}
+
 # end functions
 #####################################################################
 #####################################################################
@@ -2006,91 +1840,8 @@ trap cleanup_msg SIGHUP SIGINT SIGTERM
 #########################################################
 
 if [[ "$1" = 'install' ]]; then
-    starttime=$(TZ=UTC date +%s.%N)
-    INITIALINSTALL='y'
-    export INITIALINSTALL='y'
-
-    # skip cache update check for first time install YUM runs
-    if [[ "$INITIALINSTALL" = [yY] ]]; then
-        # CACHESKIP=' -C'
-        CACHESKIP=""
-    else
-        CACHESKIP=""
-    fi
-
-    if [[ "$INITIALINSTALL" = [Yy] ]]; then
-        lowmemcheck initialinstall
-    else
-        lowmemcheck
-    fi
-    # setramdisk
-    centminlog
-    diskalert
-    {
-    
-    CHECKCENTMINMODINSTALL=$(ls /etc/init.d | grep -E '(csf|lfd|nginx|php-fpm|^nsd)')
-    if [ ! -z "$CHECKCENTMINMODINSTALL" ]; then
-    echo ""
-    echo "Centmin Mod previous installation detected. "
-    echo ""
-    echo "If you are upgrading a server which already previously had Centmin Mod installed"
-    echo "you DO NOT need to run option #1, instead run option #4 & then #5 for upgrading"
-    echo "Nginx web server and upgrading PHP."
-    echo ""
-    echo "exiting script"
-    exit
-    fi
-    
-    dlstarttime=$(TZ=UTC date +%s.%N)
-    {    
-    alldownloads
-    } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_downloadtimes_${DT}.log"
-    ERR=$?; [ "$ERR" != 0 ] && exit $ERR
-
-    dlendtime=$(TZ=UTC date +%s.%N)
-    DOWNLOADTIME=$(echo "scale=2;$dlendtime - $dlstarttime"|bc )
-
-    echo "" >> "${CENTMINLOGDIR}/centminmod_downloadtimes_${DT}.log"
-    echo "Total YUM + Source Download Time: $DOWNLOADTIME seconds" >> "${CENTMINLOGDIR}/centminmod_downloadtimes_${DT}.log"
-    ls -lah "${CENTMINLOGDIR}/centminmod_downloadtimes_${DT}.log"
-
-    funct_centmininstall
-
-    # setup command shortcut aliases 
-    # given the known download location
-    # updated method for cmdir and centmin shorcuts
-    sed -i '/cmdir=/d' /root/.bashrc
-    sed -i '/centmin=/d' /root/.bashrc
-    rm -rf /usr/bin/cmdir
-    alias cmdir="pushd ${SCRIPT_DIR}"
-    echo "alias cmdir='pushd ${SCRIPT_DIR}'" >> /root/.bashrc
-cat > "/usr/bin/centmin" << EOF
-#!/bin/bash
-pushd "$SCRIPT_DIR"; bash centmin.sh
-EOF
-    chmod 0700 /usr/bin/centmin
-
-    unsetramdisk
-
-    echo "$SCRIPT_VERSION" > /etc/centminmod-release
-    #echo "$SCRIPT_VERSION #`date`" >> /etc/centminmod-versionlog
-    } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_install.log"
-    ERR=$?; [ "$ERR" != 0 ] && { checklogdetails; exit $ERR; }
-
-    if [ "$CCACHEINSTALL" == 'y' ]; then
-    
-        # check if ccache installed first
-        if [ -f /usr/bin/ccache ]; then
-    { echo ""; source ~/.bashrc; echo "ccache stats:"; ccache -s; echo ""; } 2>&1 | tee -a "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_install.log"
-        fi
-    fi
-    
-    endtime=$(TZ=UTC date +%s.%N)
-    INSTALLTIME=$(echo "scale=2;$endtime - $starttime"|bc )
-    echo "" >> "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_install.log"
-    echo "Total Centmin Mod Install Time: $INSTALLTIME seconds" >> "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_install.log"
-    
-    exit 0
+   centmininitialinstall
+   exit 0
 else
         if [[ "$ENABLE_MENU" = [yY] ]]; then
             while :
@@ -2133,81 +1884,9 @@ else
         
         case "$option" in
         1|install)
-            CM_MENUOPT=1
-            starttime=$(TZ=UTC date +%s.%N)
-            INITIALINSTALL='y'
-            export INITIALINSTALL='y'
-
-            # skip cache update check for first time install YUM runs
-            if [[ "$INITIALINSTALL" = [yY] ]]; then
-                # CACHESKIP=' -C'
-                CACHESKIP=""
-            else
-                CACHESKIP=""
-            fi
-
-            if [[ "$INITIALINSTALL" = [Yy] ]]; then
-                lowmemcheck initialinstall
-            else
-                lowmemcheck
-            fi
-            # setramdisk
-            centminlog
-            diskalert
-            {
-            
-            CHECKCENTMINMODINSTALL=$(ls /etc/init.d | grep -E '(csf|lfd|nginx|php-fpm|^nsd)')
-            if [ ! -z "$CHECKCENTMINMODINSTALL" ]; then
-            echo ""
-            echo "Centmin Mod previous installation detected. "
-            echo ""
-            echo "If you are upgrading a server which already previously had Centmin Mod installed"
-            echo "you DO NOT need to run option #1, instead run option #4 & then #5 for upgrading"
-            echo "Nginx web server and upgrading PHP."
-            echo ""
-            echo "exiting script"
-            exit
-            fi
-            
-            alldownloads
-            funct_centmininstall
-
-    # setup command shortcut aliases 
-    # given the known download location
-    # updated method for cmdir and centmin shorcuts
-    sed -i '/cmdir=/d' /root/.bashrc
-    sed -i '/centmin=/d' /root/.bashrc
-    rm -rf /usr/bin/cmdir
-    alias cmdir="pushd ${SCRIPT_DIR}"
-    echo "alias cmdir='pushd ${SCRIPT_DIR}'" >> /root/.bashrc
-cat > "/usr/bin/centmin" << EOF
-#!/bin/bash
-pushd "$SCRIPT_DIR"; bash centmin.sh
-EOF
-    chmod 0700 /usr/bin/centmin
-
-            unsetramdisk
-
-            echo "$SCRIPT_VERSION" > /etc/centminmod-release
-            #echo "$SCRIPT_VERSION #`date`" >> /etc/centminmod-versionlog
-            } 2>&1 | tee "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_install.log"
-            ERR=$?; [ "$ERR" != 0 ] && { checklogdetails; exit $ERR; }
-
-            if [ "$CCACHEINSTALL" == 'y' ]; then
-            
-                # check if ccache installed first
-                if [ -f /usr/bin/ccache ]; then
-            { echo ""; source ~/.bashrc; echo "ccache stats:"; ccache -s; echo ""; } 2>&1 | tee -a "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_install.log"
-                fi
-            fi
-            
-            endtime=$(TZ=UTC date +%s.%N)
-            INSTALLTIME=$(echo "scale=2;$endtime - $starttime"|bc )
-            echo "" >> "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_install.log"
-            echo "Total Centmin Mod Install Time: $INSTALLTIME seconds" >> "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_install.log"
-            
-            exit 0
-        
+        CM_MENUOPT=1
+        centmininitialinstall
+        exit 0
         ;;
         2|addvhost)
         if [ -f "${CENTMINLOGDIR}/centminmod_${SCRIPT_VERSION}_${DT}_nginx_addvhost.log" ]; then
@@ -2741,32 +2420,6 @@ EOF
         done
     else
         case "$1" in
-        install)
-        INITIALINSTALL='y'
-        export INITIALINSTALL='y'
-
-        # skip cache update check for first time install YUM runs
-        if [[ "$INITIALINSTALL" = [yY] ]]; then
-            # CACHESKIP=' -C'
-            CACHESKIP=""
-        else
-            CACHESKIP=""
-        fi
-
-        if [[ "$INITIALINSTALL" = [Yy] ]]; then
-            lowmemcheck initialinstall
-        else
-            lowmemcheck
-        fi
-        # setramdisk
-        diskalert
-        alldownloads
-        funct_centmininstall
-        unsetramdisk
-        echo "$SCRIPT_VERSION" > /etc/centminmod-release
-        echo "$SCRIPT_VERSION #`date`" >> /etc/centminmod-versionlog
-        
-        ;;
         addvhost)
         
         funct_nginxaddvhost
