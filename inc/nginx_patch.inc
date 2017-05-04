@@ -232,26 +232,37 @@ patchnginx() {
      if [ -f "$(which figlet)" ]; then
          figlet -ckf standard "Cloudflare Nginx HTTP/2 + SPDY Patch"
      fi
-     echo  "######################################################################"
+     echo "######################################################################"
      echo "Patching Nginx for HTTP/2 + SPDY Support"
-     echo  "######################################################################"
+     echo "######################################################################"
      echo "Cloudflare Nginx HTTP/2 + SPDY patch"
      echo "https://github.com/felixbuenemann/sslconfig/blob/updated-nginx-1.9.15-spdy-patch/patches/nginx_1_9_15_http2_spdy.patch"
-     echo  "######################################################################"
+     echo "https://raw.githubusercontent.com/cloudflare/sslconfig/master/patches/nginx__1.11.11_http2_spdy.patch"
+     echo "######################################################################"
      
-     
-     NGINXSPDYPATCHED_NAME='nginx_1_9_15_http2_spdy.patch'
-     rm -rf "${NGINXSPDYPATCHED_NAME}"
-     NGINXTLSPATCHLINK="https://raw.githubusercontent.com/felixbuenemann/sslconfig/updated-nginx-1.9.15-spdy-patch/patches/${NGINXSPDYPATCHED_NAME}"
-     # fallback mirror if github down, use gitlab mirror
-     curl -4Is --connect-timeout 5 --max-time 5 "${NGINXTLSPATCHLINK}" | grep 'HTTP\/' | egrep '200' >/dev/null 2>&1
-     NGINXTLSPATCH_CURLCHECK=$?
-     if [[ "$NGINXTLSPATCH_CURLCHECK" != '0' ]]; then
-       NGINXTLSPATCHLINK="https://gitlab.com/centminmod-github-mirror/sslconfig-felix-group/raw/updated-nginx-1.9.15-spdy-patch/patches/${NGINXSPDYPATCHED_NAME}"
+     if [[ "$DETECT_NGXVER" -ge 1011011 && "$DETECT_NGXVER" -lt 1013000 ]]; then
+        # https://github.com/cloudflare/sslconfig/pull/63/files
+        NGINXSPDYPATCHED_NAME='nginx__1.11.11_http2_spdy.patch'
+        NGINXTLSPATCHLINK='https://raw.githubusercontent.com/cloudflare/sslconfig/master/patches/nginx__1.11.11_http2_spdy.patch'
+     else
+        NGINXSPDYPATCHED_NAME='nginx_1_9_15_http2_spdy.patch'
+        NGINXTLSPATCHLINK="https://raw.githubusercontent.com/felixbuenemann/sslconfig/updated-nginx-1.9.15-spdy-patch/patches/${NGINXSPDYPATCHED_NAME}"
+        # fallback mirror if github down, use gitlab mirror
+        curl -4Is --connect-timeout 5 --max-time 5 "${NGINXTLSPATCHLINK}" | grep 'HTTP\/' | egrep '200' >/dev/null 2>&1
+        NGINXTLSPATCH_CURLCHECK=$?
+        if [[ "$NGINXTLSPATCH_CURLCHECK" != '0' ]]; then
+          NGINXTLSPATCHLINK="https://gitlab.com/centminmod-github-mirror/sslconfig-felix-group/raw/updated-nginx-1.9.15-spdy-patch/patches/${NGINXSPDYPATCHED_NAME}"
+        fi
      fi
-     wget -4 -cnv --no-check-certificate "$NGINXTLSPATCHLINK"
-     if [[ -f "${NGINXSPDYPATCHED_NAME}" && ! "$(grep 'ngx_http_spdy_filter' auto/modules)" ]]; then
-       patch -p1 < "${NGINXSPDYPATCHED_NAME}"
+     rm -rf "${NGINXSPDYPATCHED_NAME}"
+     if [[ -s "$CUR_DIR/patches/cloudflare/$NGINXSPDYPATCHED_NAME" ]]; then
+        cp -f $CUR_DIR/patches/cloudflare/$NGINXSPDYPATCHED_NAME $NGINXSPDYPATCHED_NAME
+     else
+        wget -4 -cnv --no-check-certificate $NGINXTLSPATCHLINK
+     fi   
+     if [[ -s "${NGINXSPDYPATCHED_NAME}" && ! "$(grep 'ngx_http_spdy_filter' auto/modules)" ]]; then
+       echo "patch -p1 < $NGINXSPDYPATCHED_NAME"
+       patch -p1 < $NGINXSPDYPATCHED_NAME
      fi
   else
      if [ -f "${NGINXSPDYPATCHED_NAME}" ]; then
@@ -268,6 +279,7 @@ patchnginx() {
      echo "Cloudflare Nginx Dynamic TLS patch"
      echo "https://github.com/cloudflare/sslconfig/raw/master/patches/nginx__dynamic_tls_records.patch"
      echo "######################################################################"
+
      if [[ "$DETECT_NGXVER" -le '1011004' && "$DETECT_NGXVER" -ge '1011000' ]]; then
       NGINXTLSPATCH_NAME='nginx__dynamic_tls_records.patch'
      elif [[ "$DETECT_NGXVER" -ge '1011005' ]]; then
@@ -289,7 +301,7 @@ patchnginx() {
       fi
      elif [[ "$DETECT_NGXVER" -ge '1011005' ]]; then
       if [[ -f "$CUR_DIR/patches/cloudflare/$NGINXTLSPATCH_NAME" && ! "$(grep 'dyn_rec.threshold' src/event/ngx_event_openssl.c)" ]]; then
-        echo "patch -p1 < "$CUR_DIR/patches/cloudflare/$NGINXTLSPATCH_NAME""
+        echo "patch -p1 < $CUR_DIR/patches/cloudflare/$NGINXTLSPATCH_NAME"
         patch -p1 < "$CUR_DIR/patches/cloudflare/$NGINXTLSPATCH_NAME"
       fi
      fi
