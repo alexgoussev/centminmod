@@ -235,6 +235,7 @@ PCRE_SOURCEINSTALL='n'
 PCRE_VERSION='8.41'          # PCRE version
 
 # PHP and Cache/Acceleration
+IMAGEMAGICK_VER='6'
 IMAGICKPHP_VER='3.4.3'   # PHP extension for imagick
 MAILPARSEPHP_VER='2.1.6'    # https://pecl.php.net/package/mailparse
 MAILPARSEPHP_COMPATVER='3.0.2' # For PHP 7

@@ -1516,7 +1516,7 @@ remi_tweaks() {
 }
 
 imagick_fixes() {
-	if [[ -f /etc/ImageMagick/policy.xml || -f /etc/ImageMagick6/ImageMagick-6/policy.xml ]]; then
+	if [[ -f /etc/ImageMagick/policy.xml || -f "/etc/ImageMagick${IMVER}/ImageMagick-${IMVER}/policy.xml" ]]; then
 		if [ -f "${SCRIPT_DIR}/tools/imagemagick-fix.sh" ]; then
 			"${SCRIPT_DIR}/tools/imagemagick-fix.sh" >/dev/null 2>&1
 		fi

@@ -1,11 +1,4 @@
-checkphpext() {
-    cecho "Check for php extensions" $boldyellow
-    if [[ ! -f "${DIR_TMP}/imagick-${IMAGICKPHP_VER}.tgz" || ! -d "${DIR_TMP}/imagick-${IMAGICKPHP_VER}" ]]; then
-        echo "Downloading imagick extension"
-        imagickphpexttarball
-    fi
-    echo
-}
+IMVER=${IMAGEMAGICK_VER:-6}
 
 checkimagicksys() {
 
@@ -44,166 +37,139 @@ checkimagicksys() {
     else
         YUMDNFBIN='yum'
     fi
+}
 
-    cecho "Check for ImageMagicK System Updates (YUM)" $boldyellow
-    if [[ "$REMIREPO_DISABLE" = [nN] ]]; then
-        if [ -f /etc/yum.repos.d/remi.repo ]; then
-            if [[ $(rpm -q ImageMagick6 >/dev/null 2>&1; echo $?) = '0' ]] && [[ $(rpm -q ImageMagick >/dev/null 2>&1; echo $?) != '0' ]]; then
-                # skip for initial installs to speed up install
-                if [[ "$INITIALINSTALL" != [yY] ]]; then
-                    # yum clean all >/dev/null 2>&1
-                    time $YUMDNFBIN -y update ImageMagick6 ImageMagick6-devel ImageMagick6-c++ ImageMagick6-c++-devel --enablerepo=remi${DISABLEREPO_DNF} --disableplugin=priorities
-                    sar_call
-                fi
-            else
-                if [[ "$CENTOS_SIX" = '6' ]]; then
-                    # time $YUMDNFBIN -y install libwebp libwebp-devel --skip-broken
-                    sar_call
-                    # yum clean all >/dev/null 2>&1
-                    time yum -y install ImageMagick6 ImageMagick6-devel ImageMagick6-c++ ImageMagick6-c++-devel --enablerepo=remi${DISABLEREPO_DNF} --disableplugin=priorities --skip-broken
-                else
-                    # yum clean all >/dev/null 2>&1
-                    time yum -y install ImageMagick6 ImageMagick6-devel ImageMagick6-c++ ImageMagick6-c++-devel --enablerepo=remi${DISABLEREPO_DNF} --disableplugin=priorities
-                fi
-            fi
-        elif [ ! -f /etc/yum.repos.d/remi.repo ]; then
-            # for very old centmin mod installs which never had remi yum repo setup
-            if [[ "$CENTOS_SIX" = '6' ]]; then
-                remisixyum
-            elif [[ "$CENTOS_SEVEN" = '7' ]]; then
-                remisevenyum
-            fi
-            if [[ $(rpm -q ImageMagick >/dev/null 2>&1; echo $?) = '0' ]]; then
-                echo
-                echo "----------------------------------------------------------------------------------"
-                cecho "Using Remi YUM repo ImageMagicK version" $boldyellow
-                echo "----------------------------------------------------------------------------------"
-                time $YUMDNFBIN -y install lcms2-devel libwebp libwebp-devel OpenEXR-devel ilmbase-devel libGLU-devel libGL-devel mesa-libGL mesa-libGL-devel libXxf86vm libXxf86vm-devel --enablerepo=remi${DISABLEREPO_DNF}
-                sar_call
-                yum -y remove ImageMagick${DISABLEREPO_DNF}
-                sar_call
-          
-                if [[ "$CENTOS_SIX" = '6' ]]; then
-                    # time $YUMDNFBIN -y install libwebp libwebp-devel --skip-broken
-                    time $YUMDNFBIN -y install ImageMagick6 ImageMagick6-devel ImageMagick6-c++ ImageMagick6-c++-devel --enablerepo=remi${DISABLEREPO_DNF} --disableplugin=priorities --skip-broken
-                    sar_call
-                else
-                    time $YUMDNFBIN -y install ImageMagick6 ImageMagick6-devel ImageMagick6-c++ ImageMagick6-c++-devel --enablerepo=remi${DISABLEREPO_DNF} --disableplugin=priorities
-                    sar_call
-                fi
-                echo
-            else
-                # if ImageMagick doesn't exist
-                if [ ! -f /etc/yum.repos.d/remi.repo ]; then
-                    # for very old centmin mod installs which never had remi yum repo setup
-                    if [[ "$CENTOS_SIX" = '6' ]]; then
-                        remisixyum
-                    elif [[ "$CENTOS_SEVEN" = '7' ]]; then
-                        remisevenyum
-                    fi
-                fi
-                time $YUMDNFBIN -y install lcms2-devel libwebp libwebp-devel OpenEXR-devel ilmbase-devel libGLU-devel libGL-devel mesa-libGL mesa-libGL-devel libXxf86vm libXxf86vm-devel --enablerepo=remi${DISABLEREPO_DNF}
-                sar_call
-                if [[ "$CENTOS_SIX" = '6' ]]; then
-                    # time $YUMDNFBIN -y install libwebp libwebp-devel --skip-broken
-                    time $YUMDNFBIN -y install ImageMagick6 ImageMagick6-devel ImageMagick6-c++ ImageMagick6-c++-devel --enablerepo=remi${DISABLEREPO_DNF} --disableplugin=priorities --skip-broken
-                    sar_call
-                else
-                    time $YUMDNFBIN -y install ImageMagick6 ImageMagick6-devel ImageMagick6-c++ ImageMagick6-c++-devel --enablerepo=remi${DISABLEREPO_DNF} --disableplugin=priorities
-                    sar_call
-                fi
-            fi
-        fi
-    fi
-    echo
+imagemagickinstall() {
+   if [[ "$REMIREPO_DISABLE" = [yY] ]]; then
+      if [[ $(rpm -q ImageMagick >/dev/null 2>&1; echo $?) = 0 ]]; then
+         cecho "Updating ImageMagick 6..." $boldyellow
+         time $YUMDNFBIN -y update ImageMagick ImageMagick-devel ImageMagick-c++ ImageMagick-c++-devel --disableplugin=priorities${DISABLEREPO_DNF}
+      else
+         cecho "Installing ImageMagick 6..." $boldyellow
+         time $YUMDNFBIN -y install ImageMagick ImageMagick-devel ImageMagick-c++ ImageMagick-c++-devel${DISABLEREPO_DNF}
+      fi
+      sar_call
+   else # REMIREPO_DISABLE=n
+      if [[ ! -f /etc/yum.repos.d/remi.repo ]]; then
+         # for very old centmin mod installs which never had remi yum repo setup
+         if [[ "$CENTOS_SIX" = '6' ]]; then
+            remisixyum
+         elif [[ "$CENTOS_SEVEN" = '7' ]]; then
+            remisevenyum
+         fi
+      fi
+
+      if [[ $(rpm -q ImageMagick${IMVER} >/dev/null 2>&1; echo $?) = 0 ]]; then
+         cecho "Updating ImageMagick ${IMVER} from Remi YUM repo..." $boldyellow
+         time $YUMDNFBIN -y update ImageMagick${IMVER} ImageMagick${IMVER}-devel ImageMagick${IMVER}-c++ ImageMagick${IMVER}-c++-devel --enablerepo=remi${DISABLEREPO_DNF} --disableplugin=priorities
+         sar_call
+      else
+         if [[ $(rpm -q ImageMagick >/dev/null 2>&1; echo $?) = 0 ]]; then
+            cecho "Removing old version of ImageMaick..." $boldyellow
+            yum -y remove ImageMagick${DISABLEREPO_DNF}
+            sar_call
+         fi
+
+         if [[ "$IMVER" == 7 && $(rpm -q ImageMagick6 >/dev/null 2>&1; echo $?) = 0 ]]; then
+            cecho "Removing ImageMaick 6..." $boldyellow
+            yum -y remove ImageMagick6${DISABLEREPO_DNF}
+            sar_call
+         fi
+
+         if [[ "$IMVER" == 6 && $(rpm -q ImageMagick7 >/dev/null 2>&1; echo $?) = 0 ]]; then
+            cecho "Removing ImageMaick 7..." $boldyellow
+            yum -y remove ImageMagick6${DISABLEREPO_DNF}
+            sar_call
+         fi
+
+         cecho "Installing ImageMagick ${IMVER} from Remi YUM repo..." $boldyellow
+         local skipbroken = ''
+         [[ "$CENTOS_SIX" = 6 ]] && skipbroken='--skip-broken'
+         time $YUMDNFBIN -y install ImageMagick${IMVER} ImageMagick${IMVER}-devel ImageMagick${IMVER}-c++ ImageMagick${IMVER}-c++-devel --enablerepo=remi${DISABLEREPO_DNF} --disableplugin=priorities $skipbroken
+         sar_call
+      fi
+   fi
 }
 
 imagickinstall() {
-    if [[ "$PHP_INSTALL" = [yY] ]]; then
-    if [[ "$PHPIMAGICK" = [yY] ]]; then
-        checkphpext
-        checkimagicksys
-        imagick_fixes
-    echo "*************************************************"
-    cecho "* Installing imagick PHP Extension" $boldgreen
-    echo "*************************************************"
+if [[ "$PHP_INSTALL" = [yY] ]]; then
+if [[ "$IMAGEMAGICK_VER" != [nN] ]]; then
+   echo "*************************************************"
+   cecho "* Installing ImageMagick" $boldgreen
+   echo "*************************************************"
+   echo
 
-    pwd
-    echo "cd $DIR_TMP"
-    cd $DIR_TMP
+   checkimagicksys
+   imagemagickinstall
+   imagick_fixes
 
-php -v | awk -F " " '{print $2}' | head -n1 | cut -d . -f1,2 | egrep -w '7.0||7.1|7.2'
-PHPSEVEN_CHECKVER=$?
-echo $PHPSEVEN_CHECKVER
+fi # IMAGEMAGICK_VER != n
 
-if [[ "$PHPMUVER" = '7.0' || "$PHPMUVER" = '7.1' || "$PHPMUVER" = '7.2' || "$PHPMUVER" = 'NGDEBUG' || "$PHPSEVEN_CHECKVER" = '0' ]] && [[ "$(echo $IMAGICKPHP_VER | cut -d . -f1,2 | sed -e 's|\.||')" -le '33' ]]; then
-    IMAGICKGITLINK='https://github.com/mkoppanen/imagick'
-    # fallback mirror if official github is down, use gitlab mirror
-    curl -4Is --connect-timeout 5 --max-time 5 $IMAGICKGITLINK | grep 'HTTP\/' | grep '200' >/dev/null 2>&1
-    IMAGICKGITCURLCHECK=$?
-    if [[ "$IMAGICKGITCURLCHECK" != '0' ]]; then
-        IMAGICKGITLINK='https://gitlab.com/centminmod-github-mirror/imagick.git'
-    fi
+if [[ "$PHPIMAGICK" = [yY] ]]; then
+   echo "*************************************************"
+   cecho "* Installing imagick PHP Extension" $boldgreen
+   echo "*************************************************"
+   echo
 
-    if [[ -d "imagick-php7" && -d "imagick-php7/.git" ]]; then       
-        cd imagick-php7
-        git stash
-        git pull
-        git log -3
-        sar_call
-    elif [[ -d "imagick-php7" && ! -d "imagick-php7/.git" ]]; then
-        rm -rf imagick-php7
-        git clone -b phpseven "$IMAGICKGITLINK" imagick-php7
-        sar_call
-    else
-        rm -rf imagick-php7
-        git clone -b phpseven "$IMAGICKGITLINK" imagick-php7
-        sar_call
-    fi
-    echo
-    echo "compiling imagick PHP extension for PHP 7.x ..."
-    cd imagick-php7
-    if [[ "$INITIALINSTALL" != [yY] ]]; then
-        make clean
-    fi
-    /usr/local/bin/phpize
-    ./configure --with-php-config=/usr/local/bin/php-config
-    sar_call
-    make${MAKETHREADS}
-    sar_call
-    make install
-    sar_call
-else    
-    cd imagick-${IMAGICKPHP_VER}
-    if [[ "$INITIALINSTALL" != [yY] ]]; then
-        make clean
-    fi
-    /usr/local/bin/phpize
-    ./configure --with-php-config=/usr/local/bin/php-config
-    sar_call
-    make${MAKETHREADS}
-    sar_call
-    make install
-    sar_call
-fi # php 7 or not
+   pwd
+   echo "cd $DIR_TMP"
+   cd $DIR_TMP
 
-#######################################################
-# check if imagick.so exists in php.ini
+   if [[ -z "$phpver" && "$PHPMVER" > 7 || "$PHPMUVER" > 7 ]] && [[ "$(echo $IMAGICKPHP_VER | cut -d . -f1,2)" < '3.3' ]]; then
+      IMAGICKGITLINK='https://github.com/mkoppanen/imagick'
+      # fallback mirror if official github is down, use gitlab mirror
+      curl -4Is --connect-timeout 5 --max-time 5 $IMAGICKGITLINK | grep 'HTTP\/' | grep '200' >/dev/null 2>&1
+      IMAGICKGITCURLCHECK=$?
+      if [[ "$IMAGICKGITCURLCHECK" != '0' ]]; then
+         IMAGICKGITLINK='https://gitlab.com/centminmod-github-mirror/imagick.git'
+      fi
 
-IMAGICKSOCHECK=$(grep 'extension=imagick.so' /usr/local/lib/php.ini >/dev/null 2>&1; echo $?)
-IMAGICKSOCHECKB=$(grep 'extension=imagick.so' "${CONFIGSCANDIR}/imagick.ini" >/dev/null 2>&1; echo $?)
+      if [[ -d "imagick-php7" && -d "imagick-php7/.git" ]]; then       
+         cd imagick-php7
+         git stash
+         git pull
+         git log -3
+      else
+         rm -rf imagick-php7
+         git clone -b phpseven "$IMAGICKGITLINK" imagick-php7
+      fi
+      sar_call
+      echo
+      echo "compiling imagick PHP extension for PHP 7.x ..."
+      cd imagick-php7
+   else    
+      if [[ ! -d "${DIR_TMP}/imagick-${IMAGICKPHP_VER}" ]]; then
+         echo "Downloading imagick extension"
+         imagickphpexttarball
+      fi
+      cd imagick-${IMAGICKPHP_VER}
+   fi # php 7 or not
 
-if [[ "$IMAGICKSOCHECK" = '1' || "$IMAGICKSOCHECKB" = '1' ]]; then
-    echo -e "\nCopying imagick.ini > ${CONFIGSCANDIR}/imagick.ini\n"
-    echo "extension=imagick.so" > "${CONFIGSCANDIR}/imagick.ini"
-    echo ";imagick.skip_version_check=1" >> "${CONFIGSCANDIR}/imagick.ini"
-fi #check if imagick.so exists in php.ini
+   [[ "$INITIALINSTALL" != [yY] ]] && make clean
+   /usr/local/bin/phpize
+   ./configure --with-php-config=/usr/local/bin/php-config
+   sar_call
+   make${MAKETHREADS}
+   sar_call
+   make install
+   sar_call
 
-    cmservice php-fpm restart
-    echo "*************************************************"
-    cecho "* imagick PHP installed" $boldgreen
-    echo "*************************************************"
+   #######################################################
+   # check if imagick.so exists in php.ini
+   IMAGICKSOCHECK=$(grep 'extension=imagick.so' /usr/local/lib/php.ini >/dev/null 2>&1; echo $?)
+   IMAGICKSOCHECKB=$(grep 'extension=imagick.so' "${CONFIGSCANDIR}/imagick.ini" >/dev/null 2>&1; echo $?)
+   if [[ "$IMAGICKSOCHECK" != 0 || "$IMAGICKSOCHECKB" != 0 ]]; then
+      echo -e "\nCopying imagick.ini > ${CONFIGSCANDIR}/imagick.ini\n"
+      echo "extension=imagick.so" > "${CONFIGSCANDIR}/imagick.ini"
+      echo ";imagick.skip_version_check=1" >> "${CONFIGSCANDIR}/imagick.ini"
+   fi
 
-    fi
-    fi # PHP_INSTALL=y
+   cmservice php-fpm restart
+
+   echo "*************************************************"
+   cecho "* imagick PHP installed" $boldgreen
+   echo "*************************************************"
+
+fi # PHPIMAGICK = y
+fi # PHP_INSTALL = y
 }
