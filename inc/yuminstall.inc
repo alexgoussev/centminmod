@@ -209,7 +209,7 @@ echo "--------------------------------------------------------------------------
 done
 sar_call
 fi # /usr/local/src/curlinstall_yum.txt
-
+echo
 
 ${YUMDNFBIN}${CACHESKIP} -y -q install mytop iftop${DISABLEREPO_DNF}
 if [ -f /usr/bin/mytop ]; then
