@@ -473,7 +473,7 @@ if [ -f /etc/yum.repos.d/remi.repo ]; then
                         #echo priorities already set for remi.repo
         PRIOREXISTS=1
                 else
-                        echo "setting yum priorities for remi.repo"
+                        echo "setting yum priorities for remi.repo:"
 ex -s /etc/yum.repos.d/remi.repo << EOF
 :/\[remi/ , /gpgkey/
 :a
@@ -484,6 +484,7 @@ exclude=php* mysql*
 :q
 EOF
         
+        echo
         cecho "*************************************************" $boldgreen
         cecho "Fixing remi.repo YUM Priorities" $boldgreen
         cecho "*************************************************" $boldgreen

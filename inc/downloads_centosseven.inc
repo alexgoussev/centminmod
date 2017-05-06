@@ -102,58 +102,41 @@ fi # AXIVOREPO_DISABLE
 remisevenyum() {
 
 if [[ "$REMIREPO_DISABLE" = [nN] ]]; then
-
 # if [ ${MACHINE_TYPE} == 'x86_64' ]; then
-    cd $DIR_TMP
+   cd $DIR_TMP
 
-  if [ -s "${CENTOSSEVENREMIFILE}" ]; then
-    echo "${CENTOSSEVENREMIFILE} [found]"
-    rpm --import http://rpms.remirepo.net/RPM-GPG-KEY-remi
-    rpm --import https://rpms.remirepo.net/RPM-GPG-KEY-remi2017
-    rpm -q gpg-pubkey --qf "%{summary} ->%{version}-%{release}\n"
-    rpm -Uvh --nosignature ${CENTOSSEVENREMIFILE}
-    ERR=$?
-    CCREMICHECK="$ERR"
-      if [ "$CCREMICHECK" == '0' ]; then
-        yumpriorremi
-        echo ""
+   if [[ ! -s "${CENTOSSEVENREMIFILE}" ]]; then
+      echo "Error: ${CENTOSSEVENREMIFILE} not found! Downloading now..."
+      wget ${WGETOPT} ${CENTOSSEVENREMI} --tries=3
+      ERROR=$?
+      if [[ "$ERROR" != 0 ]]; then
+         cecho "Error: ${CENTOSSEVENREMIFILE} download failed." $boldgreen
+         FAILREMI='y'
+         checklogdetails
+         return 1
       else
-        cecho "Error: problem with ${CENTOSSEVENREMIFILE} install." $boldgreen
-        # exit $ERR
-      fi    
-    else
-    echo "Error: ${CENTOSSEVENREMIFILE} not found !!! Downloading now......"
-    wget ${WGETOPT} ${CENTOSSEVENREMI} --tries=3
-    # wget ${WGETOPT} ${CENTOSSEVENREMILOCAL} --tries=3
-  ERROR=$?
-    if [[ "$ERROR" != '0' ]]; then
-    cecho "Error: ${CENTOSSEVENREMIFILE} download failed." $boldgreen
-  FAILREMI='y'
-  checklogdetails
-    # exit #$ERROR
-  else 
-    cecho "Download done." $boldyellow
-    rpm --import http://rpms.remirepo.net/RPM-GPG-KEY-remi
-    rpm --import https://rpms.remirepo.net/RPM-GPG-KEY-remi2017
-    rpm -q gpg-pubkey --qf "%{summary} ->%{version}-%{release}\n"
-    rpm -Uvh --nosignature ${CENTOSSEVENREMIFILE}
-    ERR=$?
-    CCREMICHECK="$ERR"
-      if [ "$CCREMICHECK" == '0' ]; then
-        yumpriorremi
-        echo ""
-      else
-        cecho "Error: problem with ${CENTOSSEVENREMIFILE} install." $boldgreen
-        # exit $ERR
+         cecho "Download done." $boldyellow
       fi
-    fi
-  
-  fi
+   else
+      echo "${CENTOSSEVENREMIFILE} [found]"
+   fi
 
+   rpm --import http://rpms.remirepo.net/RPM-GPG-KEY-remi
+    rpm --import https://rpms.remirepo.net/RPM-GPG-KEY-remi2017
+    rpm -q gpg-pubkey --qf "%{summary} ->%{version}-%{release}\n"
+   local res=$(rpm -U --nosignature ${CENTOSSEVENREMIFILE} 2>&1)    
+   ERR=$?
+   echo $res
+   if [[ "$ERR" == 0 || -n "$(echo $res | grep 'is aready installed')" ]]; then
+      yumpriorremi
+   else
+      cecho "Error: problem with ${CENTOSSEVENREMIFILE} install." $boldgreen
+      # exit $ERR
+   fi    
+   echo
+   
 # fi # MACHINE_TYPE
-
 fi # REMIREPO_DISABLE
-
 }
 
 ###############################################
@@ -391,25 +374,23 @@ arrays=(${PACKAGEEXTRA})
 # since it's already done by curl installer script
 if [ ! -f /usr/local/src/curlinstall_yum.txt ]; then
 
+echo "----------------------------------------------------------------------------------"
 for pkgs in ${arrays[@]}
 do
 echo Processing package: $pkgs
 YUMINSTALLRPMCHECK=$(rpm -ql $pkgs >/dev/null 2>&1; echo $?)
 #echo $YUMINSTALLRPMCHECK
-        if [[ "$YUMINSTALLRPMCHECK" = '0' ]]; then
 echo "----------------------------------------------------------------------------------"
+        if [[ "$YUMINSTALLRPMCHECK" = '0' ]]; then
         # ${YUMDNFBIN}${CACHESKIP} -q -y update $pkgs
         # ${YUMDNFBIN}${CACHESKIP} -q list $pkgs
         echo "$pkgs already installed"
-echo "----------------------------------------------------------------------------------"
         else
-echo "----------------------------------------------------------------------------------"
 cecho "Installing $pkgs" $boldyellow
-echo "----------------------------------------------------------------------------------"
         ${YUMDNFBIN}${CACHESKIP} -q -y install $pkgs
         # ${YUMDNFBIN}${CACHESKIP} -q list $pkgs
-echo "----------------------------------------------------------------------------------"
         fi
+echo "----------------------------------------------------------------------------------"
 done
 
 fi # /usr/local/src/curlinstall_yum.txt
