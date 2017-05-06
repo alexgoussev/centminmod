@@ -1,4 +1,4 @@
-function funct_phpconfigure {
+funct_phpconfigure() {
 # set locale temporarily to english
 # for php compile due to some non-english
 # locale compilation issues i.e. Turkish 
@@ -151,14 +151,18 @@ else
 	LDAPOPT=""
 fi
 
-if [[ -z "$PHPMUVER" && "$PHPMVER" > 7 || "$PHPMUVER" > 7 ]]; then
-  if [[ "$(rpm -ql libwebp | grep libwebp.so >/dev/null 2>&1; echo $?)" -eq '0' ]]; then
-    LIBVPXOPT=' --with-webp-dir=/usr'
+if [[ -z "$phpver" && "$PHPMVER" > 7 || "$PHPMUVER" > 7 ]]; then
+  if [[ "$CUSTOM_WEBP" == [yY] ]]; then
+    LIBVPXOPT=' --with-webp-dir=/usr/local'
   else
-    time yum${CACHESKIP} -y install libwebp libwebp-devel
-    LIBVPXOPT=' --with-webp-dir=/usr'
+    if [[ "$(rpm -ql libwebp | grep libwebp.so >/dev/null 2>&1; echo $?)" -eq '0' ]]; then
+      LIBVPXOPT=' --with-webp-dir=/usr'
+    else
+      time yum${CACHESKIP} -y install libwebp libwebp-devel
+      LIBVPXOPT=' --with-webp-dir=/usr'
+    fi
   fi
-elif [[ -z "$PHPMUVER" && "$PHPMVER" > 5.4 || "$PHPMUVER" > 5.4 ]]; then
+elif [[ -z "$phpver" && "$PHPMVER" > 5.4 || "$PHPMUVER" > 5.4 ]]; then
   if [[ -d /usr/include/vpx ]]; then
 	 LIBVPXOPT=" --with-vpx-dir=${PLIBDIR}"
   else
@@ -175,7 +179,7 @@ else
   LIBVPXOPT=''
 fi
 
-if [[ -z "$PHPMUVER" && "$PHPMVER" > 7 || "$PHPMUVER" > 7 ]]; then
+if [[ -z "$phpver" && "$PHPMVER" > 7 || "$PHPMUVER" > 7 ]]; then
   TLIBOPT=""
 else
   if [[ -f /usr/include/t1lib.h ]]; then
@@ -664,7 +668,7 @@ else
     MAKETHREADS_PHP=" -j$CPUS_MAKEPHP"
 fi
 
-if [[ -z "$PHPMUVER" && "$PHPMVER" > 7 || "$PHPMUVER" > 7 ]]; then
+if [[ -z "$phpver" && "$PHPMVER" > 7 || "$PHPMUVER" > 7 ]]; then
    MYSQLEXTOPT=''
 else
    MYSQLEXTOPT=' --with-mysql=mysqlnd'

@@ -286,6 +286,9 @@ CUSTOM_CURLRPMCARESVER='1.10.0-6.0'  # c-ares version
 CUSTOM_CURLRPMSYSURL='http://mirror.city-fan.org/ftp/contrib/sysutils/Mirroring'
 CUSTOM_CURLRPMLIBURL='http://mirror.city-fan.org/ftp/contrib/libraries'
 
+CUSTOM_WEBP='y'            #
+CUSTOM_LIBWEBPVER='0.6.0'  #
+
 SELFSIGNEDSSL_C='US'
 SELFSIGNEDSSL_ST='California'
 SELFSIGNEDSSL_L='Los Angeles'

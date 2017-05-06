@@ -486,6 +486,9 @@ CUSTOM_CURLRPMCARESVER='1.10.0-6.0'  # c-ares version
 CUSTOM_CURLRPMSYSURL='http://mirror.city-fan.org/ftp/contrib/sysutils/Mirroring'
 CUSTOM_CURLRPMLIBURL='http://mirror.city-fan.org/ftp/contrib/libraries'
 
+CUSTOM_WEBP='n'                      #
+CUSTOM_LIBWEBPVER='0.6.0'            #
+
 # wget source compile version
 WGET_VERSION='1.19.1'
 ###############################################################
@@ -700,6 +703,7 @@ source "inc/jemalloc.inc"
 source "inc/zlib.inc"
 source "inc/updater_submenu.inc"
 source "inc/centminfinish.inc"
+source "inc/webp.inc"
 
 checkcentosver
 mysqltmpdir
@@ -1243,6 +1247,8 @@ else
         echo "*************************************************"
     fi
 fi
+
+webpinstallfunct
 
 ngxinstallstarttime=$(TZ=UTC date +%s.%N)
 {    

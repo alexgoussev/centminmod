@@ -839,6 +839,16 @@ ccachetarball() {
    untar_file "$CCACHEFILE"
 }
 
+
+webptarball() {
+   if [[ "$CUSTOM_WEBP" == [yY] ]]; then
+      download_file "$LIBWEBP_LINK" "$LIBWEBP_FILE"
+      untar_file "$LIBWEBP_FILE" "$LIBWEBP_DIR"
+      filetarball "$LIBGD_LINK" "$LIBGD_FILE"
+   fi
+}
+
+
 ###############################################
 alldownloads() {
    echo "*****************************************************"
@@ -946,7 +956,9 @@ alldownloads() {
          mariadbrpms
       fi
 
-      # mariadbyumrepo
+      webptarball
+
+     # mariadbyumrepo
       # validcheck_downloads
 
       echo "*****************************************************"

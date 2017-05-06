@@ -468,3 +468,10 @@ GPERFTOOL_LINKFILE="gperftools-${GPERFTOOLS_VERSION}.tar.gz"
 GPERFTOOL_LINKDIR="gperftools-${GPERFTOOLS_VERSION}"
 GPERFTOOL_LINK="https://github.com/gperftools/gperftools/releases/download/gperftools-${GPERFTOOLS_VERSION}/${GPERFTOOL_LINKFILE}"
 GPERFTOOL_LINKLOCAL="${LOCALCENTMINMOD_MIRROR}/centminmodparts/gperf/${GPERFTOOL_LINKFILE}"
+
+LIBWEBP_FILE="libwebp-${CUSTOM_LIBWEBPVER}.tar.gz"
+LIBWEBP_DIR="libwebp-${CUSTOM_LIBWEBPVER}"
+LIBWEBP_LINK="https://chromium.googlesource.com/webm/libwebp/+archive/v${CUSTOM_LIBWEBPVER}.tar.gz"
+
+LIBGD_FILE="libgd-master.tar.gz"
+LIBGD_LINK='https://github.com/libgd/libgd/archive/master.tar.gz'
