@@ -34,102 +34,66 @@ echo -e "$color$message" ; $Reset
 return
 }
 
-    if [[ "$AXELVERBOSE" = 'silent' ]]; then
+   if [[ "$AXELVERBOSE" = 'silent' ]]; then
       CONFIG_VERBOSEOPT=' -q'
       MAKE_VERBOSEOPT=' -s'
-    else
+   else
       CONFIG_VERBOSEOPT=""
       MAKE_VERBOSEOPT=""
-    fi
-    if [[ -f "$(which figlet)" && "$AXELVERBOSE" != 'silent' ]]; then
-        figlet -ckf standard "Axel Install (install_axel)"
-    fi
+   fi
 
+   if [[ -f "$(which figlet)" && "$AXELVERBOSE" != 'silent' ]]; then
+      figlet -ckf standard "Axel Install (install_axel)"
+   fi
+   echo
 	cd $DIR_TMP
 
-        if [[ "$AXELVERBOSE" != 'silent' ]]; then
-          cecho "Download $AXEK_LINKFILE ..." $boldyellow
-        fi
-    if [ -s $AXEK_LINKFILE ]; then
-        cecho "Axel ${AXEL_VER} Archive found, skipping download..." $boldgreen 
-    else
-        wget -O $AXEK_LINKFILE $AXEK_LINK
-ERROR=$?
-    if [[ "$ERROR" != '0' ]]; then
-    cecho "Error: $AXEK_LINKFILE download failed." $boldgreen
-checklogdetails
-    exit #$ERROR
-else 
-         cecho "Download $AXEK_LINKFILE done." $boldyellow
-#echo ""
-    fi
-    fi
+   download_file "$AXEK_LINK" "$AXEK_LINKFILE" "wget"
+   if [[ "$(tar -tzf axel-${AXEL_VER}.tar.gz >/dev/null; echo $?)" != '0' ]]; then
+      rm -rf $AXEK_LINKFILE
+      echo "re-try download form local mirror..."
+      download_file "$AXEK_LINKLOCAL" "$AXEK_LINKFILE" "wget"
+   fi
+   untar_file "$AXEK_LINKFILE"
 
-if [[ "$(tar -tzf axel-${AXEL_VER}.tar.gz >/dev/null; echo $?)" != '0' ]]; then
-  rm -rf /svr-setup/axel-${AXEL_VER}.*
-  echo "re-try download form local mirror..."
-  wget -O $AXEK_LINKFILE $AXEK_LINKLOCAL
-fi
-
-tar xzf $AXEK_LINKFILE
-ERROR=$?
-    if [[ "$ERROR" != '0' ]]; then
-    cecho "Error: $AXEK_LINKFILE extraction failed." $boldgreen
-checklogdetails
-    exit #$ERROR
-else 
-         cecho "$AXEK_LINKFILE valid file." $boldyellow
-echo ""
-    fi
-
-	cd axel-${AXEL_VER}
-  if [[ "$AXELVERBOSE" != 'silent' ]]; then
-    if [ -f autogen.sh ]; then
-      ./autogen.sh
-    fi
-  else
-    if [ -f autogen.sh ]; then
-      ./autogen.sh >/dev/null 2>&1 
-    fi
-  fi
+   AXEL_DIR=$(tar -tzf "$AXEK_LINKFILE" | head -1 | cut -f1 -d"/")
+	cd $AXEL_DIR
+   
+   if [[ "$AXELVERBOSE" != 'silent' ]]; then
+      if [ -f autogen.sh ]; then
+         ./autogen.sh
+      fi
+   else
+      if [ -f autogen.sh ]; then
+         ./autogen.sh >/dev/null 2>&1 
+      fi
+   fi
 	./configure${CONFIG_VERBOSEOPT}
 	make${MAKETHREADS}${MAKE_VERBOSEOPT}
 	make install${MAKE_VERBOSEOPT}
-  if [[ "$AXELVERBOSE" != 'silent' ]]; then
-	 which axel
-  fi
-  if [[ "$AXELVERBOSE" != 'silent' ]]; then
-    echo
-    cecho "Updated Axel ${AXEL_VER} successfully..." $boldyellow
-    echo
-  else
-    echo
-    cecho "Installed Axel ${AXEL_VER} successfully..." $boldyellow
-    echo
-  fi
+   
+   if [[ "$AXELVERBOSE" != 'silent' ]]; then
+      which axel
+   fi
+
+   echo
+   cecho "Updated Axel ${AXEL_VER} successfully..." $boldyellow
+   echo
+   echo
 }
 
 axelsetup() {
-
-    # if [ -f "$(which figlet)" ]; then
-    #     figlet -ckf standard "Axel Setup (axelsetup)"
-    # fi
-
-	if [[ "$INITIALINSTALL" = [yY] ]]; then
-		# remove any yum installed axel packages
-		# in favour of source compiled package
-		if [[ -z "$(rpm -ql axel | grep 'not installed')" && -f /usr/local/bin/axel ]]; then
-			yum -q -y remove axel
-		fi
-	elif [[ "$INITIALINSTALL" != [yY] ]]; then
-		# remove any yum installed axel packages
-		# in favour of source compiled package
-		if [[ -z "$(rpm -ql axel | grep 'not installed')" && -f /usr/local/bin/axel ]]; then
-			yum -q -y remove axel
-		fi
-	fi
+   if [[ -z "$(rpm -ql axel | grep 'not installed')" && -f /usr/local/bin/axel ]]; then
+      yum -q -y remove axel
+   fi
 
 	if [ ! -f /usr/local/bin/axel ]; then
+   
+      if [[ ( "$CENTOS_SIX" = 6 || "$CENTOS_SEVEN" = 7 ) && ! -f /usr/local/bin/axel ]]; then
+         install_axel
+         return $?
+      fi
+
 		AXELRPMCHECK=0
 		# echo
 		# echo "Detected that axel download accelerator"
@@ -200,17 +164,5 @@ axelsetup() {
 		fi
 	fi # centos 5.x ver
 
-	###
-	if [[ "$CENTOS_SIX" = '6' && ! -f /usr/local/bin/axel ]]; then
-		install_axel
-	fi
-	###
-
-	if [[ "$CENTOS_SEVEN" = '7' && ! -f /usr/local/bin/axel ]]; then
-		# axel download accelerator works with CentOS 7.x and epel repo
-		# unlike axel provided by rpmforge on CentOS 6.x repo
-		# yum -y install axel
-		install_axel
-	fi
 	fi # check for /usr/bin/axel
 }
