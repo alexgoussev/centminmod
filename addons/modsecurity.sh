@@ -21,7 +21,7 @@ LOCALCENTMINMOD_MIRROR='https://centminmod.com'
 MODSEC_PCREVER='8.38'
 APR_VER='1.5.2'
 APRU_VER='1.5.4'
-MODSEC_VER='2.9.0'
+MODSEC_VER='2.9.1'
 OPENSSL_VER='1.0.2e'
 PREFIX='/opt'
 PCRE_PREFIX='/opt/pcre/lib'
@@ -67,7 +67,7 @@ modsec_install() {
 	
 	cd $TMP_DIR
 	if [[ ! -f apr-${APR_VER}.tar.gz ]]; then
-		wget -4 -cnv http://apache.mirror.uber.com.au//apr/apr-${APR_VER}.tar.gz
+		wget -4 -cnv http://apache.mirror.uber.com.au/apr/apr-${APR_VER}.tar.gz
 	fi
 	tar xzf apr-${APR_VER}.tar.gz
 	cd apr-${APR_VER}
@@ -104,7 +104,7 @@ modsec_install() {
 	
 	cd $TMP_DIR
 	if [[ ! -f modsecurity-${MODSEC_VER}.tar.gz ]]; then
-		wget -4 -cnv https://www.modsecurity.org/tarball/2.9.0/modsecurity-${MODSEC_VER}.tar.gz
+		wget -4 -cnv https://www.modsecurity.org/tarball/${MODSEC_VER}/modsecurity-${MODSEC_VER}.tar.gz
 	fi
 	tar xvzf modsecurity-${MODSEC_VER}.tar.gz
 	cd modsecurity-${MODSEC_VER}
