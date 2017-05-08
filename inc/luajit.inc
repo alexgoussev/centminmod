@@ -1,10 +1,10 @@
 luajitinstall() {
 
 if [[ "$ORESTY_LUANGINX" = [yY] ]]; then
-    echo "*************************************************"
-    cecho "* LuaJIT-${ORESTY_LUAGITVER} install" $boldgreen
-    echo "*************************************************"
     if [[ "$LUAJIT_GITINSTALL" = [nN] ]]; then
+        echo "**********************************************************************"
+        cecho "* LuaJIT ${ORESTY_LUAGITVER} install" $boldgreen
+        echo "**********************************************************************"
         cd $DIR_TMP
         cd LuaJIT-${ORESTY_LUAGITVER}
         if [[ "$INITIALINSTALL" != [yY] ]]; then
@@ -17,7 +17,10 @@ if [[ "$ORESTY_LUANGINX" = [yY] ]]; then
     
         export LUAJIT_LIB='/usr/local/lib'
         export LUAJIT_INC='/usr/local/include/luajit-2.0'
-    elif [[ "$LUAJIT_GITINSTALL" = [yY] ]]; then
+    else # LUAJIT_GITINSTALL=y
+        echo "**********************************************************************"
+        cecho "* LuaJIT ${LUAJIT_GITINSTALLVER} install from master git branch" $boldgreen
+        echo "**********************************************************************"
         cd $DIR_TMP
         if [[ -d "LuaJIT-${LUAJIT_GITINSTALLVER}" && -d "LuaJIT-${LUAJIT_GITINSTALLVER}/.git" ]]; then            
             cd LuaJIT-${LUAJIT_GITINSTALLVER}
