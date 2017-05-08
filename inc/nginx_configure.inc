@@ -1620,9 +1620,20 @@ if [[ "$NGINX_PASSENGER" = [yY] && "$RUBY_VERSION" ]]; then
 fi
 
 if [[ "$NGINX_PASSENGER" = [yY] && -d "$(passenger-config --nginx-addon-dir)" ]]; then
-	# [[ -s "/etc/profile.d/rvm.sh" ]] && source "/etc/profile.d/rvm.sh"  # This loads RVM into a shell session.
-	sed -i 's/#passenger_/passenger_/g' /usr/local/nginx/conf/passenger.conf
-	RUBYMODULE=" --add-module=$(passenger-config --nginx-addon-dir)"
+   if [[ "$DYNAMIC_SUPPORT" = [yY] && "$NGXDYNAMIC_PASSENGER" = [yY] ]]; then
+      # https://www.phusionpassenger.com/library/install/nginx/install_as_nginx_module.html
+      RUBYMODULE=" --add-dynamic-module=$(passenger-config --nginx-addon-dir)"
+      if [ -f /usr/local/nginx/conf/dynamic-modules.conf ]; then
+         echo 'load_module "modules/ngx_http_passenger_module.so";' >> /usr/local/nginx/conf/dynamic-modules.conf
+      fi
+      if [ -f /usr/local/nginx/modules/ngx_http_passenger_module.so.old ]; then
+         rm -rf /usr/local/nginx/modules/ngx_http_passenger_module.so.old
+      fi
+   else
+      # [[ -s "/etc/profile.d/rvm.sh" ]] && source "/etc/profile.d/rvm.sh"  # This loads RVM into a shell session.
+      RUBYMODULE=" --add-module=$(passenger-config --nginx-addon-dir)"
+   fi
+   sed -i 's/#passenger_/passenger_/g' /usr/local/nginx/conf/passenger.conf
 	echo
 	echo "RUBY_VERSION"
 	echo $RUBY_VERSION

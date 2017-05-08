@@ -5,7 +5,7 @@ VER='0.0.8'
 # for Centminmod.com
 # written by George Liu (eva2000) vbtechsupport.com
 ######################################################
-RUBYVER='2.4.0'
+RUBYVER='2.4.1'
 RUBYBUILD=''
 
 # switch to nodesource yum repo instead of source compile
@@ -15,7 +15,9 @@ DT=$(date +"%d%m%y-%H%M%S")
 CENTMINLOGDIR='/root/centminlogs'
 DIR_TMP='/svr-setup'
 CONFIGSCANBASE='/etc/centminmod'
-SCRIPT_DIR=$(readlink -f $(dirname ${BASH_SOURCE[0]}))
+SCRIPT_DIR=$(CDPATH= cd -- "${BASH_SOURCE[0]%/*}" && pwd)
+CM_INSTALLDIR=${SCRIPT_DIR%/*}
+
 ######################################################
 # Setup Colours
 black='\E[30;40m'
@@ -112,8 +114,8 @@ else
     MAKETHREADS=" -j$CPUS"
 fi
 
-if [ -f "${SCRIPT_DIR}/inc/custom_config.inc" ]; then
-    source "inc/custom_config.inc"
+if [ -f "${CM_INSTALLDIR}/inc/custom_config.inc" ]; then
+    source "${CM_INSTALLDIR}/inc/custom_config.inc"
 fi
 
 if [ -f "${CONFIGSCANBASE}/custom_config.inc" ]; then
@@ -123,9 +125,14 @@ fi
 
 preyum() {
 	if [[ ! -d /svr-setup ]]; then
-		yum -y install gcc-c++ patch readline readline-devel zlib zlib-devel libyaml-devel libffi-devel make bzip2 autoconf automake libtool bison iconv-devel sqlite-devel openssl-devel
-	elif [[ -z "$(rpm -ql libffi-devel)" || -z "$(rpm -ql libyaml-devel)" || -z "$(rpm -ql sqlite-devel)" ]]; then
-		yum -y install libffi-devel libyaml-devel sqlite-devel
+		yum -y install gcc-c++ patch readline readline-devel zlib zlib-devel libyaml-devel libffi-devel make bzip2 autoconf automake libtool bison iconv-devel sqlite-devel openssl-devel mysql-devel
+	else
+      if [[ -z "$(rpm -ql libffi-devel)" || -z "$(rpm -ql libyaml-devel)" || -z "$(rpm -ql sqlite-devel)" ]]; then
+		   yum -y install libffi-devel libyaml-devel sqlite-devel
+      fi
+      if [[ -z "$(rpm -ql mysql-devel)" ]]; then
+		   yum -y mysql-devel
+      fi
 	fi
 
 	if [[ "$(rpm -ql ruby | grep -v 'not installed')" || "$(rpm -ql ruby-libs | grep -v 'not installed')" || "$(rpm -ql rubygems | grep -v 'not installed')" ]]; then
@@ -240,7 +247,7 @@ if [[ -z $(which ruby >/dev/null 2>&1) || -z $(which rvm >/dev/null 2>&1) || -z 
 	echo $GEM_HOME
 	echo $GEM_PATH
 	echo "--------------------------------"
-	echo "gem install rake rails sqlite3 mysql bundler --no-ri --no-rdoc"
+	echo "gem install rake rails sqlite3 mysql2 bundler --no-ri --no-rdoc"
 	echo "gem install passenger --no-ri --no-rdoc"
 	
 	echo "--------------------------------"
@@ -266,7 +273,7 @@ if [[ -z $(which ruby >/dev/null 2>&1) || -z $(which rvm >/dev/null 2>&1) || -z 
 	echo "--------------------------------"
 	gem env
 	echo "--------------------------------"
-	gem install rake rails sqlite3 mysql --no-ri --no-rdoc
+	gem install rake rails sqlite3 mysql2 --no-ri --no-rdoc
 	gem install passenger --no-ri --no-rdoc
 	echo "--------------------------------"
 	
