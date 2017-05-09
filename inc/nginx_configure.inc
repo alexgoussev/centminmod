@@ -161,8 +161,7 @@ fi
 	# using string command to check modsecurity version installed so that
 	# can make modsecurity installation a standalone centmin mod addon script
 	# on its own
-	if [[ -f /usr/local/modsecurity/lib/standalone.so && -f /usr/local/modsecurity/lib/mod_security2.so ]] && [[ "$NGINX_MODSECURITY" = [yY] ]]; then
-    	MODSEC_INSTALLED=y
+	if [[ "$NGINX_MODSECURITY3" = [nN] && "$NGINX_MODSECURITY" = [yY] ]] && [[ -f /usr/local/modsecurity/lib/standalone.so && -f /usr/local/modsecurity/lib/mod_security2.so ]]; then
     	MODSEC_VER=$(strings /usr/local/modsecurity/lib/mod_security2.so | awk '/Apache\// {print $3}' | awk -F "/" '{print $2}')
     	if [[ -d "${DIR_TMP}/modsecurity-${MODSEC_VER}" ]]; then
         	MODSEC_OPT=" --add-module=../modsecurity-${MODSEC_VER}/nginx/modsecurity"
@@ -182,11 +181,30 @@ fi
 		PCRE_LDOPT=""
 	fi
 
-	if [[ "$GPERFTOOLS_SOURCEINSTALL" = [yY] ]]; then
-		GPERFOPT=" --with-google_perftools_module"
-	else
-		GPERFOPT=""
-	fi
+if [[ "$NGINX_MODSECURITY3" = [yY] ]]; then
+   cd "$DIR_TMP"
+   rm -rf ModSecurity-nginx
+   git clone git clone https://github.com/SpiderLabs/ModSecurity-nginx
+   if [[ "$DYNAMIC_SUPPORT" = [yY] && "$NGXDYNAMIC_MODSECURITY3" = [yY] ]]; then
+      MODSEC_OPT=' --add-dynamic-module=../ModSecurity-nginx'
+#      if [ -f /usr/local/nginx/conf/dynamic-modules.conf ]; then
+#         echo 'load_module "modules/???.so";' >> /usr/local/nginx/conf/dynamic-modules.conf
+#      fi
+#      if [ -f /usr/local/nginx/modules/???.so.old ]; then
+#         rm -rf /usr/local/nginx/modules/???.so.old
+#      fi
+   else
+      MODSEC_OPT=' --add-module=../ModSecurity-nginx'
+   fi
+else
+   MODSEC_OPT=''
+fi	
+
+if [[ "$GPERFTOOLS_SOURCEINSTALL" = [yY] ]]; then
+	GPERFOPT=" --with-google_perftools_module"
+else
+	GPERFOPT=""
+fi
 
 if [[ "$NGINX_ZLIBNG" = [yY] && "$(uname -m)" = 'x86_64' ]]; then
 	zlibng_install
@@ -194,7 +212,6 @@ if [[ "$NGINX_ZLIBNG" = [yY] && "$(uname -m)" = 'x86_64' ]]; then
 else
   ZLIBNG_OPT=""
 fi
-
 
 if [[ "$CENTOS_SEVEN" = '7' || "$CENTOS_SIX" = '6' ]]; then
   fi

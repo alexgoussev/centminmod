@@ -66,6 +66,7 @@ NGXDYNAMIC_BROTLI='y'
 NGXDYNAMIC_FANCYINDEX='y'
 NGXDYNAMIC_HIDELENGTH='y'
 NGXDYNAMIC_PASSENGER='n'
+NGXDYNAMIC_MODSECURITY3='n'
 
 # Maintenance Mode (will run maintenance mode during these upgrades)
 # set = y to put nginx, php and mariadb major version updates into 503 
@@ -97,6 +98,7 @@ NGINX_HTTP2='y'              # Nginx http/2 patch https://community.centminmod.c
 NGINX_HTTPPUSH='n'           # Nginx http/2 push patch https://community.centminmod.com/threads/11910/
 NGINX_ZLIBNG='n'             # 64bit OS only for Nginx compiled against zlib-ng https://github.com/Dead2/zlib-ng
 NGINX_MODSECURITY='n'        # modsecurity module support https://github.com/SpiderLabs/ModSecurity/wiki/Reference-Manual#Installation_for_NGINX
+NGINX_MODSECURITY3='n'       # modsecurity module support via libmodsecurity (ModSecurity v3) https://github.com/SpiderLabs/ModSecurity/tree/v3/master
 NGINX_REALIP='y'             # http://nginx.org/en/docs/http/ngx_http_realip_module.html
 NGINX_RDNS='n'               # https://github.com/flant/nginx-http-rdns
 NGINX_NJS='n'                # nginScript https://www.nginx.com/blog/launching-nginscript-and-looking-ahead/

@@ -187,6 +187,8 @@ installopenssl
 
 luajitinstall
 
+modsecurity3install
+
     # Install nginx
     cd $DIR_TMP
 

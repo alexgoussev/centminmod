@@ -210,6 +210,7 @@ NGXDYNAMIC_BROTLI='y'
 NGXDYNAMIC_FANCYINDEX='y'
 NGXDYNAMIC_HIDELENGTH='y'
 NGXDYNAMIC_PASSENGER='n'
+NGXDYNAMIC_MODSECURITY3='n'
 
 # set = y to put nginx, php and mariadb major version updates into 503 
 # maintenance mode https://community.centminmod.com/posts/26485/
@@ -236,6 +237,7 @@ NGINX_HTTP2='y'              # Nginx http/2 patch https://community.centminmod.c
 NGINX_HTTPPUSH='n'           # Nginx http/2 push patch https://community.centminmod.com/threads/11910/
 NGINX_ZLIBNG='n'             # 64bit OS only for Nginx compiled against zlib-ng https://github.com/Dead2/zlib-ng
 NGINX_MODSECURITY='n'        # modsecurity module support https://github.com/SpiderLabs/ModSecurity/wiki/Reference-Manual#Installation_for_NGINX
+NGINX_MODSECURITY3='n'       # modsecurity module support via libmodsecurity (ModSecurity v3) https://github.com/SpiderLabs/ModSecurity/tree/v3/master
 NGINX_REALIP='y'             # http://nginx.org/en/docs/http/ngx_http_realip_module.html
 NGINX_RDNS='n'               # https://github.com/flant/nginx-http-rdns
 NGINX_NJS='n'                # nginScript https://www.nginx.com/blog/launching-nginscript-and-looking-ahead/
@@ -588,6 +590,10 @@ if [[ "$CENTOS_SEVEN" = '7' ]]; then
   AXEL_VER='2.12'
 fi
 
+if [[ "$NGINX_MODSECURITY3" = [yY] ]]; then
+   NGINX_MODSECURITY='n'
+fi
+
 # source "inc/mainmenu.inc"
 # source "inc/mainmenu_cli.inc"
 # source "inc/ramdisk.inc"
@@ -705,6 +711,7 @@ source "inc/zlib.inc"
 source "inc/updater_submenu.inc"
 source "inc/centminfinish.inc"
 source "inc/webp.inc"
+source "inc/modsecurity.inc"
 
 checkcentosver
 mysqltmpdir
