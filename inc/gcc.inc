@@ -1,3 +1,46 @@
+scl_install() {
+   # if gcc version is less than 4.7 (407) install scl collection yum repo
+   if [[ "$CENTOS_SIX" = '6' ]]; then
+      # if devtoolset exists, enable it first before checking gcc versions
+      if [[ "$DEVTOOLSETSIX" = [yY] ]]; then
+         if [[ -f /opt/rh/devtoolset-6/root/usr/bin/gcc && -f /opt/rh/devtoolset-6/root/usr/bin/g++ ]]; then
+            source /opt/rh/devtoolset-6/enable
+         fi
+      else
+         if [[ -f /opt/rh/devtoolset-4/root/usr/bin/gcc && -f /opt/rh/devtoolset-4/root/usr/bin/g++ ]]; then
+            source /opt/rh/devtoolset-4/enable
+         fi
+      fi
+      if [[ "$DEVTOOLSETSIX" = [yY] || "$(gcc --version | head -n1 | awk '{print $3}' | cut -d . -f1,2 | sed "s|\.|0|")" -lt 407 ]]; then
+         echo "install centos-release-scl for newer gcc and g++ versions"
+         time $YUMDNFBIN -y -q install centos-release-scl${DISABLEREPO_DNF}
+         sar_call
+         if [[ "$DEVTOOLSETSIX" = [yY] ]]; then
+            time $YUMDNFBIN -y -q install devtoolset-6-gcc devtoolset-6-gcc-c++ devtoolset-6-binutils${DISABLEREPO_DNF}
+         else
+            time $YUMDNFBIN -y -q install devtoolset-4-gcc devtoolset-4-gcc-c++ devtoolset-4-binutils${DISABLEREPO_DNF}
+         fi
+         sar_call
+         echo
+         /opt/rh/devtoolset-4/root/usr/bin/gcc --version
+         /opt/rh/devtoolset-4/root/usr/bin/g++ --version
+      fi
+   elif [[ "$CENTOS_SEVEN" = '7' ]]; then
+      time $YUMDNFBIN -y -q install centos-release-scl${DISABLEREPO_DNF}
+      sar_call
+      if [[ "$DEVTOOLSETSIX" = [yY] ]]; then
+         time $YUMDNFBIN -y -q install devtoolset-6-gcc devtoolset-6-gcc-c++ devtoolset-6-binutils${DISABLEREPO_DNF}
+      else
+         time $YUMDNFBIN -y -q install devtoolset-4-gcc devtoolset-4-gcc-c++ devtoolset-4-binutils${DISABLEREPO_DNF}
+      fi
+      sar_call
+      echo
+      /opt/rh/devtoolset-6/root/usr/bin/gcc --version
+      /opt/rh/devtoolset-6/root/usr/bin/g++ --version
+   fi
+}
+
+
 enable_clang() {
    if [[ "$CENTOS_SIX" = 6 || "$CENTOS_SEVEN" = 7 ]] && [[ ! -f /usr/bin/clang ]]; then
       time $YUMDNFBIN -q -y install clang clang-devel${DISABLEREPO_DNF}
@@ -31,31 +74,28 @@ enable_devtoolset() {
    CFLAGS=""
 
    if [[ "$GENERAL_DEVTOOLSETGCC" = [yY] ]]; then
-      # devtoolset-4 usage for ngx_pagespeed 1.10 branch which doesn't support
-      # centos 6 based gcc 4.4.7
-      if [[ "$CENTOS_SIX" = 6 || "$CENTOS_SEVEN" = 7 ]]; then
-         if [[ "$DEVTOOLSETSIX" = [yY] ]]; then
-            if [[ ! -f /opt/rh/devtoolset-6/root/usr/bin/gcc || ! -f /opt/rh/devtoolset-6/root/usr/bin/g++ ]]; then
-               scl_install
-            fi       
-            source /opt/rh/devtoolset-6/enable
-         else
-            if [[ ! -f /opt/rh/devtoolset-4/root/usr/bin/gcc || ! -f /opt/rh/devtoolset-4/root/usr/bin/g++ ]]; then
-               scl_install
-            fi
-            source /opt/rh/devtoolset-4/enable
+      if [[ "$DEVTOOLSETSIX" = [yY] ]]; then
+         if [[ ! -f /opt/rh/devtoolset-6/root/usr/bin/gcc || ! -f /opt/rh/devtoolset-6/root/usr/bin/g++ ]]; then
+            scl_install
          fi
-         which gcc
-         which g++
-         unset CC
-         unset CXX
-         if [[ "$INITIALINSTALL" != [yY] ]]; then
-            export CC="ccache gcc"
-            export CXX="ccache g++"
-         else
-            export CC="gcc"
-            export CXX="g++"
+         devtoolsetdir='/opt/rh/devtoolset-6'
+      else
+         if [[ ! -f /opt/rh/devtoolset-4/root/usr/bin/gcc || ! -f /opt/rh/devtoolset-4/root/usr/bin/g++ ]]; then
+            scl_install
          fi
+         devtoolsetdir='/opt/rh/devtoolset-4'
+      fi
+      source "${devtoolsetdir}/enable"
+      which gcc
+      which g++
+      unset CC
+      unset CXX
+      if [[ "$INITIALINSTALL" != [yY] ]]; then
+         export CC="ccache ${devtoolsetdir}/root/usr/bin/gcc"
+         export CXX="ccache ${devtoolsetdir}/root/usr/bin/g++"
+      else
+         export CC="${devtoolsetdir}/root/usr/bin/gcc"
+         export CXX="${devtoolsetdir}/root/usr/bin/g++"
       fi
 
       # intel specific
