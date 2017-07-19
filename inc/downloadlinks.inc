@@ -87,7 +87,7 @@ CENTOSSIXATRPMSLOCAL="${LOCALCENTMINMOD_MIRROR}/centminmodparts/repos/${CENTOSSI
 #====================================================================================
 
 # dynamic mirror check for EPEL below overrides these values now
-CENTOSSEVENEPELFILE="epel-release-7-9.noarch.rpm"
+CENTOSSEVENEPELFILE="epel-release-7-10.noarch.rpm"
 CENTOSSEVENEPEL="http://mirror.sfo12.us.leaseweb.net/epel/7/${RPMFARCH}/e/${CENTOSSEVENEPELFILE}"
 CENTOSSEVENEPELLOCAL="${LOCALCENTMINMOD_MIRROR}/centminmodparts/repos/${CENTOSSEVENEPELFILE}"
 
