@@ -221,6 +221,7 @@ if [[ "$CENTOS_SEVEN" = '7' || "$CENTOS_SIX" = '6' ]]; then
     NGX_HPACK_OPT=' --with-http_v2_hpack_enc'
   else
     NGX_HPACK_OPT=""
+  fi
   
   if [[ "$NGINX_HTTPPUSH" = [yY] ]]; then
     NGINX_HTTP2='y'
