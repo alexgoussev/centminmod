@@ -214,14 +214,14 @@ else
 fi
 
 if [[ "$CENTOS_SEVEN" = '7' || "$CENTOS_SIX" = '6' ]]; then
-  fi
-
+  
   if [[ "$NGINX_HPACK" = [yY] && "$DETECT_NGXVER" -ge '1013001' ]]; then
     NGX_HPACK_OPT=' --with-http_v2_hpack_enc'
   elif [[ "$NGINX_HPACK" = [yY] && "$DETECT_NGXVER" -ge '1013001' ]]; then
     NGX_HPACK_OPT=' --with-http_v2_hpack_enc'
   else
     NGX_HPACK_OPT=""
+  
   if [[ "$NGINX_HTTPPUSH" = [yY] ]]; then
     NGINX_HTTP2='y'
     ngx_httppush_patch
