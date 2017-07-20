@@ -240,9 +240,13 @@ patchnginx() {
      echo "Cloudflare Nginx HTTP/2 + SPDY patch"
      echo "https://github.com/felixbuenemann/sslconfig/blob/updated-nginx-1.9.15-spdy-patch/patches/nginx_1_9_15_http2_spdy.patch"
      echo "https://raw.githubusercontent.com/cloudflare/sslconfig/master/patches/nginx__1.11.11_http2_spdy.patch"
+     echo "https://raw.githubusercontent.com/cloudflare/sslconfig/master/patches/nginx__1.13.0_http2_spdy.patch"
      echo "######################################################################"
      
-     if [[ "$DETECT_NGXVER" -ge 1011011 ]]; then #  && "$DETECT_NGXVER" -lt 1013000
+     if [[ "$DETECT_NGXVER" -ge 1013000 ]]; then
+        NGINXSPDYPATCHED_NAME='nginx__1.13.0_http2_spdy.patch'
+        NGINXTLSPATCHLINK='https://raw.githubusercontent.com/cloudflare/sslconfig/master/patches/nginx__1.13.0_http2_spdy.patch'
+     elif [[ "$DETECT_NGXVER" -ge 1011011 ]]; then
         # https://github.com/cloudflare/sslconfig/pull/63/files
         NGINXSPDYPATCHED_NAME='nginx__1.11.11_http2_spdy.patch'
         NGINXTLSPATCHLINK='https://raw.githubusercontent.com/cloudflare/sslconfig/master/patches/nginx__1.11.11_http2_spdy.patch'
