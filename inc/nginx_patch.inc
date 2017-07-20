@@ -176,6 +176,8 @@ patchnginx() {
   {
   sleep "$NGINXPATCH_DELAY"
 
+  DETECT_NGXVER=$(awk '/define nginx_version  / {print $3}' "/svr-setup/nginx-${ngver:-$NGINX_VERSION}/src/core/nginx.h")
+
   # unofficial OpenSSL 1.1.0 beta Nginx patches
   DETECTOPENSSL_ONEZERO=$(echo $OPENSSL_VERSION  | cut -d . -f1,2)
   # detect nginx <=1.11.3 or => 1.11.0 as 1.11.4+ has fix for openssl 1.1 so no patching needed
@@ -240,7 +242,7 @@ patchnginx() {
      echo "https://raw.githubusercontent.com/cloudflare/sslconfig/master/patches/nginx__1.11.11_http2_spdy.patch"
      echo "######################################################################"
      
-     if [[ "$DETECT_NGXVER" -ge 1011011 && "$DETECT_NGXVER" -lt 1013000 ]]; then
+     if [[ "$DETECT_NGXVER" -ge 1011011 ]]; then #  && "$DETECT_NGXVER" -lt 1013000
         # https://github.com/cloudflare/sslconfig/pull/63/files
         NGINXSPDYPATCHED_NAME='nginx__1.11.11_http2_spdy.patch'
         NGINXTLSPATCHLINK='https://raw.githubusercontent.com/cloudflare/sslconfig/master/patches/nginx__1.11.11_http2_spdy.patch'
